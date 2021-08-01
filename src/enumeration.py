@@ -1,0 +1,1 @@
+# bottom-up enumeration of a grammer with observational equivalence
