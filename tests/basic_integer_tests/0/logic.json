@@ -1,6 +1,6 @@
 {
     "precondition": "",
-    "postcondition": "",
-    "loop_invariant": "",
+    "postcondition": "y == 0",
+    "loop_invariant": "x == 10",
     "correct": true
 }

@@ -1,0 +1,6 @@
+{
+    "precondition": "",
+    "postcondition": "y == x + 1",
+    "loop_invariant": "y == x + 1",
+    "correct": true
+}
