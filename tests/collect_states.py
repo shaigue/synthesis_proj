@@ -1,4 +1,5 @@
 import ast
+import json
 from _ast import While, Module
 from typing import Any
 import random
@@ -30,7 +31,7 @@ class CollectLoopStatesTransformer(ast.NodeTransformer):
         )
 
 
-def collect_positive_states(program_ast: ast.Module) -> list[dict[str, int]]:
+def collect_positive_states(program_ast: ast.AST) -> list[dict[str, int]]:
     transformed_ast = CollectLoopStatesTransformer().visit(program_ast)
     transformed_ast = ast.fix_missing_locations(transformed_ast)
     transformed_code = compile(transformed_ast, filename='<string>', mode='exec')
@@ -57,27 +58,24 @@ def collect_negative_states_randomly(positive_states: list[dict[str, int]], n_st
     return negative_states
 
 
-EXAMPLE_SRC = """
-x = 1
-n = 10
-while n > 0:
-    n = n - 1
-"""
+def collect_states(program_ast: ast.AST) -> tuple[list[dict[str, int]], list[dict[str, int]]]:
+    positive_states = collect_positive_states(program_ast)
+    negative_states = collect_negative_states_randomly(positive_states)
+    return positive_states, negative_states
 
 
-def positive_example():
-    print(collect_positive_states(ast.parse(EXAMPLE_SRC)))
-
-
-def try_on_all_tests():
+def create_states_for_all_tests():
     tests_dir = config.ROOT_PATH / 'tests'
     for program_path in tests_dir.rglob('program.py'):
         program_ast = ast.parse(program_path.read_text())
-        positive_states = collect_positive_states(program_ast)
-        negative_states = collect_negative_states_randomly(positive_states)
-        print(f'{program_path}\nPOSITIVE={positive_states}\nNEGATIVE={negative_states}')
+        positive_states, negative_states = collect_states(program_ast)
+        positive_states_path = program_path.parent / 'positive_states.json'
+        with positive_states_path.open('w') as f:
+            json.dump(positive_states, f, indent=4)
+        negative_states_path = program_path.parent / 'negative_states.json'
+        with negative_states_path.open('w') as f:
+            json.dump(negative_states, f, indent=4)
 
 
 if __name__ == '__main__':
-    positive_example()
-    try_on_all_tests()
+    create_states_for_all_tests()
