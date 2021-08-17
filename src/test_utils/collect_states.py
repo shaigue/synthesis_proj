@@ -57,6 +57,8 @@ def collect_negative_states_randomly(positive_states: list[dict[str, int]], n_st
             negative_states.append(state)
     return negative_states
 
+# TODO - make a function that generates random string and random lists.
+
 
 def collect_states(program_ast: ast.AST) -> tuple[list[dict[str, int]], list[dict[str, int]]]:
     positive_states = collect_positive_states(program_ast)

@@ -1,0 +1,6 @@
+{
+    "precondition": "",
+    "postcondition": "y == str_reverse(x)",
+    "loop_invariant": "",
+    "correct": true
+}
