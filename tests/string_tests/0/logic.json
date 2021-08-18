@@ -1,6 +1,0 @@
-{
-    "precondition": "",
-    "postcondition": "x == y",
-    "loop_invariant": "",
-    "correct": true
-}
