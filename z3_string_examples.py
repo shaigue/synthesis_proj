@@ -1,7 +1,7 @@
 """source: https://zyh1121.github.io/z3str3Docs/inputLanguage.html#string-primitives"""
 
 from z3 import String, Concat, Length, SubString, PrefixOf, SuffixOf, \
-    Contains, Int, IndexOf, Replace, StrToInt, IntToStr
+    Contains, Int, IndexOf, Replace, StrToInt, IntToStr, Solver, Strings, Implies, sat, Not, And
 
 x = String('x')
 y = String('y')
@@ -17,9 +17,28 @@ si = Int('si')
 y_starts_in_x_starting_from_si = IndexOf(x, y, si)
 z = String('z')
 replace_first_y_in_x_by_z = Replace(x, y, z)
-# converts string representing an integer into an integer
 xi = StrToInt(x)
 xs = IntToStr(xi)
+
+#%%
+s1, s2 = Strings('s1 s2')
+s = Solver()
+s.add(Not(Implies(PrefixOf(s1, s2), Length(s1) <= Length(s2))))
+res = s.check()
+if res == sat:
+    print(s.model())
+else:
+    print('unsat')
+
+#%%
+x, y, z = Strings('x y z')
+s = Solver()
+# s.add(Not(Implies(z == Concat(x, y), And(PrefixOf(x, z), SuffixOf(y, z)))))
+s.add(z == Concat(x, y), Length(z) > Length(x), SuffixOf(x, z))
+res = s.check()
+print(f"{s} is {res}")
+if res == sat:
+    print(f"model - {s.model()}")
 
 # TODO - there are also stuff with regexp, but I don't think that we
 #   should get into that
