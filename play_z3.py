@@ -1,4 +1,4 @@
-from z3 import *
+from z3 import String, Length, Solver, sat
 
 # A = Array('A', IntSort(), IntSort())
 # x, y = Ints('x y')
@@ -34,4 +34,13 @@ from z3 import *
 # m = s.model()
 # for d in m:
 #     print(d, m[d])
+
+x = String('x')
+y = String('y')
+s = Solver()
+s.add(Length(x) < Length(y))
+res = s.check()
+if res == sat:
+    m = s.model()
+    print([(d, m[d].as_string()) for d in m])
 
