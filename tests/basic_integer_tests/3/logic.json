@@ -1,6 +1,0 @@
-{
-    "precondition": "",
-    "postcondition": "z == y",
-    "loop_invariant": "((x % 2 == 0 and z == y) or (x % 2 == 1 and z == y - 3)) and (x <= 10)",
-    "correct": true
-}
