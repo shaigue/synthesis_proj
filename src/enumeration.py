@@ -1,144 +1,174 @@
-# bottom-up enumeration of a grammar with observational equivalence
-from typing import List, Dict, Tuple
+
+from typing import List, Dict
+from parsing.earley.parser import Grammar
 from datetime import datetime
 
-from parsing.earley.parser import Grammar
-
-MAX_DEPTH = 5
+MAX_DEPTH = 4
 
 
-def is_final(program):
-    for c in program:
-        if c.isupper():
-            return False
-
-    return True
-
-
-def evaluate_program(program, inputs):
-    """
-    evalutaes a program against all given inputs (list of dicts)
-    :param program: string representing the program (predicate)
-    :param inputs: list of dicts, each dict contains a var name and its value
-    :return: a tuple representing equivalence
-    """
+def evaluate_predicate(predicate: str, inputs: List[Dict]):
     ret = tuple()
 
     for inp in inputs:
         try:
-            val = eval(program, {}, inp)
-#            if isinstance(val, bool):
-            ret += (eval(program, {}, inp),)
+            val = eval(predicate, {}, inp)
+            # if isinstance(val, bool):
+            ret += (eval(predicate, {}, inp),)
         except SyntaxError:
-            # received an incomplete program, nothing ot eval
-            return (program,)
+            # received an incomplete predicate, nothing ot eval
+            return (predicate,)
         except ZeroDivisionError:
             ret += (None,)
 
     return ret
 
 
-def replace_non_terminals(rule_lhs: str, rule_rhs: List[str], final_expressions: Dict[str, Dict[Tuple, str]], inputs, result=None) -> Dict[Tuple, str]:
-    result = {} if result is None else result
+def is_final(predicate: List[str]) -> bool:
+    for word in predicate:
+        if word.isupper():
+            return False
+    return True
 
-    # Find the first non terminal
-    i = 0
-    non_terminal = None
-    for index, item in enumerate(rule_rhs):
-        if item.isupper():
-            i = index
-            non_terminal = item
+
+def predicates_from_rule_generator(rule: List[str], predicates, depth):
+    if is_final(rule):
+        yield ' '.join(rule)
+
+    non_terminal_index = 0
+    non_terminal = ""
+    for i, word in enumerate(rule):
+        if word.isupper():
+            non_terminal_index = i
+            non_terminal = word
             break
 
-    # No non-terminal - This is a final program.
-    if non_terminal is None:
-        expr = " ".join(rule_rhs)
-        # start_t = datetime.now()
-        # existing_eq_classes = [evaluate_program(prog, inputs) for prog in result] + [evaluate_program(prog, inputs) for prog in final_expressions[rule_lhs]]
-        # print(datetime.now() - start_t)
-        values = evaluate_program(expr, inputs)
-        if values not in result.keys() and values not in final_expressions[rule_lhs].keys():
-            result[values] = expr
-            # print(expr)
-        return result
+    # Find the deepest depth in which we have programs to replace the non terminal
+    lookup_depth = depth - 1
+    for d in range(lookup_depth, -1, -1):
+        if non_terminal in predicates[d] and predicates[d][non_terminal]:
+            lookup_depth = d
+            break
 
-    # Go over all possible expressions for this non terminal
-
-    for expr in final_expressions[non_terminal].values():
-        new_rhs = rule_rhs[:]
-        new_rhs[i] = expr
-        # For each expression - replace the non terminal with this expression, and make a recursive call
-        result = replace_non_terminals(rule_lhs, new_rhs, final_expressions, inputs, result)
-
-    return result
+    for evaluation, replacement in predicates[lookup_depth].get(non_terminal, {}).items():
+        new_rule = rule[:non_terminal_index] + replacement.split(" ") + rule[non_terminal_index + 1:]
+        yield from predicates_from_rule_generator(new_rule, predicates, depth)
 
 
-def merge_dicts(dst: Dict[Tuple, str], src: Dict[Tuple, str]):
-    for k, v in src.items():
-        if k not in dst.keys():
-            dst[k] = v
-
-
-def enumerate_programs(grammar_str, inputs, base_rule):
+def enumerate_predicates(grammar_str: str, base_rule: str, inputs: List[Dict]):
     """
-    :param grammar_str: string describing grammar
-    :param inputs: list of dicts, each dict contains var names and their values
-    :return: yields programs under this grammar
+    enumerate over given grammar, with observational equivalence (Generator)
+    programs are kept in the predictes dictionary, of type Dict[int, Dict[str, Dict[tuple, str]]]
+    key of uppermost dict is depth, key of next dict is lhs of the rule, key of next dict is tuple of results from
+    the evaluation of the predicate on different input (length of tuple is amount of inputs).
+    :param grammar_str: the grammar
+    :param base_rule: LHS of the base rule of the grammar. Only predicates that are derived from this rule are complete.
+    :param inputs: inputs on which to base the observational equivalence
+    :return: yields programs, from depth 0 until MAX_DEPTH
     """
     grammar = Grammar.from_string(grammar_str)
 
-    # 'programs' is a dictionary - keys are LHS of grammar rules,
-    # values are expressions that match the LHS
-    programs = {lhs: {} for lhs in grammar.rules.keys()}
-    for lhs in programs.keys():
-        # Create depth-0 - all final expressions of depth 0
-        for rule in grammar.rules[lhs]:
-            expr = " ".join(rule.rhs)
-            if is_final(expr):
-                programs[lhs][evaluate_program(expr, inputs)] = expr
+    # Deal with depth = 0
+    predicates = {0: {}}
+    for lhs, rhs_list in grammar.rules.items():
+        for rhs in rhs_list:
+            pred = ' '.join(rhs.rhs)
+            if is_final(rhs.rhs):
+                evaluation = evaluate_predicate(pred, inputs)
+                if evaluation not in predicates[0].setdefault(lhs, {}):
+                    predicates[0][lhs][evaluation] = pred
+                    if lhs == base_rule:
+                        yield pred
 
-    for i in range(1, MAX_DEPTH):
-        for lhs in grammar.rules:
-            result = {}
-            for rule in grammar.rules[lhs]:
-                # For each rule, use previous results to create new expressions
-                if not is_final(" ".join(rule.rhs)):
-                    try:
-                        merge_dicts(result, replace_non_terminals(lhs, rule.rhs, programs, inputs))
-                    except KeyError:
-                        pass
-            merge_dicts(programs[lhs], result)
-        print("finished depth")
-        print(datetime.now())
-        for prog in programs[base_rule].values():
-            yield prog
+    for i in range(1, MAX_DEPTH+1):
+        predicates[i] = {}
+        for lhs, rhs_list in grammar.rules.items():
+            predicates[i][lhs] = {}
+            for rhs in rhs_list:
+                for new_predicate in predicates_from_rule_generator(rhs.rhs, predicates, i):
+                    evaluation = evaluate_predicate(new_predicate, inputs)
+                    predicates[i][lhs][evaluation] = new_predicate
+
+        for predicate in predicates[i][base_rule].values():
+            yield predicate
 
 
 if __name__ == "__main__":
-    tokens = r"a|b|c|<=|<|!=|==|and|or|\)|\("
+    tokens = r"x|y|z|<=|<|!=|==|and|or|\)|\(|\+|-|\*|/|%"
     grammar_string = r"""
     LEXPR -> ( AEXPR RELOP AEXPR ) | ( LEXPR LOP LEXPR )
     AEXPR -> VAR | AEXPR AOP AEXPR | NUM
     NUM -> 1 | 2 | 3 | 4 | 5 | 0
-    VAR -> x | y | z
+    VAR -> x | y | z | temp
     RELOP -> == | != | < | <=
     LOP -> and | or
     AOP -> + | - | * | // | %
     """
     inputs_dict = [
         {
+            "x": 0,
+            "y": 0,
+            "z": 0,
+            "temp": 0
+        },
+        {
             "x": 1,
             "y": 2,
-            "z": 3
+            "z": -1,
+            "temp": -1
         },
         {
             "x": 2,
+            "y": 1,
+            "z": 1,
+            "temp": 1
+        },
+        {
+            "x": 3,
             "y": 3,
-            "z": 3
+            "z": 0,
+            "temp": 0
+        },
+        {
+            "x": 4,
+            "y": 2,
+            "z": 2,
+            "temp": 2
+        },
+        {
+            "x": 5,
+            "y": 4,
+            "z": 1,
+            "temp": 1
+        },
+        {
+            "x": 6,
+            "y": 3,
+            "z": 3,
+            "temp": 3
+        },
+        {
+            "x": 7,
+            "y": 5,
+            "z": 2,
+            "temp": 2
+        },
+        {
+            "x": 8,
+            "y": 4,
+            "z": 4,
+            "temp": 4
+        },
+        {
+            "x": 9,
+            "y": 6,
+            "z": 3,
+            "temp": 3
         }
     ]
-    print(datetime.now())
-    enumerator = enumerate_programs(grammar_string, inputs_dict, "LEXPR")
-    for prog in enumerator:
-        print(prog)
 
+    start = datetime.now()
+    print(start)
+    for p in enumerate_predicates(grammar_string, "LEXPR", inputs_dict):
+        print(p)
+    print(datetime.now)
+    print(datetime.now() - start)
