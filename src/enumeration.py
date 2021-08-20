@@ -73,11 +73,12 @@ def enumerate_predicates(grammar: Grammar, positive_inputs: List[Dict], negative
     # Deal with depth = 0
     predicates = {0: {}}
     for lhs, rhs_list in grammar.rules.items():
+        predicates[0][lhs] = {}
         for rhs in rhs_list:
             pred = ' '.join(rhs.rhs)
             if is_final(rhs.rhs):
                 evaluation = evaluate_predicate(pred, inputs)
-                if evaluation not in predicates[0].setdefault(lhs, {}):
+                if evaluation not in predicates[0][lhs]:
                     predicates[0][lhs][evaluation] = pred
                     if lhs == grammar.start_symbol:
                         yield pred
@@ -89,7 +90,7 @@ def enumerate_predicates(grammar: Grammar, positive_inputs: List[Dict], negative
             for rhs in rhs_list:
                 for new_predicate in predicates_from_rule_generator(rhs.rhs, predicates, i):
                     evaluation = evaluate_predicate(new_predicate, inputs)
-                    if evaluation not in predicates[i][lhs]:
+                    if all([evaluation not in predicates[k][lhs] for k in range(i+1)]):
                         predicates[i][lhs][evaluation] = new_predicate
 
         for predicate in predicates[i][grammar.start_symbol].values():
