@@ -7,3 +7,6 @@ The project currently supports those features of the python language:
 * comparison operations `==,!=,>,<,<=,>=`
 * `if`
 * `while`
+
+## dependencies
+Z3
