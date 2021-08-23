@@ -5,24 +5,30 @@ from itertools import combinations
 import config
 
 from pathlib import Path
-from test_utils.positive_state_extractor import collect_positive_states_from_file
+from src.test_utils.positive_state_extractor import collect_positive_states_from_file
 
 MAX_DEPTH = 4
 
 
 def evaluate_predicate(predicate: str, inputs: List[Dict]):
     ret = tuple()
-
+    # TODO - can throw a NameError when one of the variables in the predicate are not defined in the state.
+    #   should be an invalid predicate
     for inp in inputs:
         try:
             val = eval(predicate, {}, inp)
             # if isinstance(val, bool):
             ret += (eval(predicate, {}, inp),)
         except SyntaxError:
+            # TODO - this exception should not be thrown, since we are doing bottom up enumeration only valid predicates
+            #   should be evaluated
             # received an incomplete predicate, nothing ot eval
             return (predicate,)
         except ZeroDivisionError:
             ret += (None,)
+        except NameError:
+            # TODO - figure out how to handle this
+            ret += (None, )
 
     return ret
 
@@ -111,9 +117,13 @@ def enumerate_predicates(grammar: Grammar, positive_inputs: List[Dict], negative
 def find_loop_invariant(grammar_string: str, positive_inputs: [List[Dict]], negative_inputs: List[Dict]) -> str:
     grammar = Grammar.from_string(grammar_string)
     for pred in enumerate_predicates(grammar, positive_inputs, negative_inputs):
-        if (len(list(filter(lambda x: not x, evaluate_predicate(pred, positive_inputs)))) == 0 and
-                len(list(filter(lambda x: x, evaluate_predicate(pred, negative_inputs)))) == 0):
-            return pred
+        positive_states_results = evaluate_predicate(pred, positive_inputs)
+        negative_states_results = evaluate_predicate(pred, negative_inputs)
+        # TODO - since the possible values can be True, False or None, and not only True or False, the previous check
+        #   was not exact. if there is None we don't want this predicate
+        if not None in positive_states_results and not None in negative_states_results:
+            if all(positive_states_results) and not any(negative_states_results):
+                return pred
 
 
 if __name__ == "__main__":

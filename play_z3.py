@@ -38,7 +38,8 @@ from z3 import String, Length, Solver, sat
 x = String('x')
 y = String('y')
 s = Solver()
-s.add(Length(x) < Length(y))
+formula = Length(x) < Length(y)
+s.add(formula)
 res = s.check()
 if res == sat:
     m = s.model()

@@ -1,4 +1,9 @@
 from pathlib import Path
+
+from z3 import Solver, And, Not, sat
+
+from src.enumeration import find_loop_invariant
+from src.grammar.integers import compile_exp_text_to_z3, get_grammar_string
 from src.test_utils.test_utils import load_test
 
 import config
@@ -6,10 +11,34 @@ import config
 
 def run_test(test_dir: Path):
     test_data = load_test(test_dir)
-    print("end")
+    positive_states = test_data['states']['+']
+    negative_states = test_data['states']['-']
+
+    property_z3 = compile_exp_text_to_z3(test_data['logic']['property'])
+
+    max_attempts = 20
+    for attempt_i in range(max_attempts):
+        loop_invariant = find_loop_invariant(get_grammar_string(), positive_states, negative_states)
+        loop_invariant_z3 = compile_exp_text_to_z3(loop_invariant)
+        s = Solver()
+        s.add(And(loop_invariant_z3, Not(property_z3)))
+        res = s.check()
+        if res == sat:
+            m = s.model()
+            negative_example = {str(d): m[d].as_long() for d in m}
+            negative_states.append(negative_example)
+        else:
+            print("found invariant!!!")
+            print(loop_invariant)
+            return 0
+    print("failed to find invariant!!!")
+    return 1
 
 
 def run_integer_tests():
+    integer_tests_dir = config.TESTS_DIR / 'integers'
+    for test_dir in integer_tests_dir.iterdir():
+        run_test(test_dir)
     # parse the safety property into z3 formula
     # load the positive and negative samples
     # synthesis a loop invariant for those samples
@@ -20,6 +49,4 @@ def run_integer_tests():
 
 
 if __name__ == '__main__':
-    # run_integer_tests()
-    test_dir = config.TESTS_DIR / 'integers' / '0'
-    run_test(test_dir)
+    run_integer_tests()
