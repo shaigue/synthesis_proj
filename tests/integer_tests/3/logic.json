@@ -1,6 +1,0 @@
-{
-    "precondition": "",
-    "postcondition": "z + y <= x",
-    "loop_invariant": "",
-    "correct": true
-}

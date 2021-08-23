@@ -1,6 +1,0 @@
-{
-    "precondition": "",
-    "postcondition": "b > c",
-    "loop_invariant": "",
-    "correct": true
-}

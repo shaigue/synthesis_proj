@@ -5,6 +5,6 @@ while x < 10:
     x = x + 1
     y = y - 1
     z = z + 2
-    temp = y
+    w = y
     y = z
-    z = temp
+    z = w

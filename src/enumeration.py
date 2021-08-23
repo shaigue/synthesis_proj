@@ -128,7 +128,7 @@ if __name__ == "__main__":
     AOP -> + | - | * | // | %
     """
 
-    file = config.TESTS_DIR / 'integer_tests' / '3' / 'program.py'
+    file = config.TESTS_DIR / 'integers' / '3' / 'program.py'
     positive = collect_positive_states_from_file(file)
     positive[0]['temp'] = -1
     negative = [
