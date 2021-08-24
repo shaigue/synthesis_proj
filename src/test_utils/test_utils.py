@@ -50,7 +50,7 @@ def iter_tests():
                 yield {
                     'test_type': test_type,
                     'test_name': test_name,
-                    'positive_states': positive_states,
+                    'states': positive_states,
                     'negative_states': negative_states,
                 }
 
