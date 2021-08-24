@@ -1,34 +1,42 @@
 """This file defines the grammar for integers, and formula translation from python expressions to Z3 formulas"""
-from typing import Union
+from typing import Union, Set
+
+from z3 import BoolRef, ArithRef, And, Or, Int, Solver, sat
 
 from adt.tree import Tree
 from parsing.earley.grammar import Grammar
 from src.generic_parser import GenericParser
-from z3 import BoolRef, ArithRef, And, Or, Int, Solver, sat
 
 
-def get_grammar_string() -> str:
-    return r"""
-        LEXPR -> ( AEXPR RELOP AEXPR ) | ( LEXPR LOP LEXPR )
-        AEXPR -> VAR | AEXPR AOP AEXPR | NUM
-        NUM -> 1 | 2 | 3 | 4 | 5 | 0
-        VAR -> x | y | z | temp
-        RELOP -> == | != | < | <=
-        LOP -> and | or
-        AOP -> + | - | * | // | %
-    """
+def _get_num_str(min_num: int, max_num: int) -> str:
+    return "|".join(map(str, range(min_num, max_num + 1)))
 
 
-def get_tokens_string() -> str:
-    return r"x|y|z|<=|<|!=|==|and|or|\)|\(|\+|-|\*|/|0|1|2|3|4|5|%"
+def _get_var_str(variables: Set[str]) -> str:
+    return "|".join(variables)
 
 
-def get_grammar() -> Grammar:
-    return Grammar.from_string(get_grammar_string())
+def get_grammar_str(variables: Set[str], min_num: int = 0, max_num: int = 5) -> str:
+    numbers_str = _get_num_str(min_num, max_num)
+    variables_str = _get_var_str(variables)
+
+    return "\n".join([
+        "LEXPR -> ( AEXPR RELOP AEXPR ) | ( LEXPR LOP LEXPR )",
+        "AEXPR -> VAR | AEXPR AOP AEXPR | NUM",
+        "NUM -> " + numbers_str,
+        "VAR -> " + variables_str,
+        "RELOP -> == | != | < | <=",
+        "LOP -> and | or",
+        "AOP -> + | - | * | // | %"
+    ])
+
+
+def get_tokens_str(variables: Set[str], min_num: int = 0, max_num: int = 5) -> str:
+    return r"<=|<|!=|==|and|or|\)|\(|\+|-|\*|/|%" + '|' + _get_var_str(variables) + '|' + _get_num_str(min_num, max_num)
 
 
 def get_parser() -> GenericParser:
-    return GenericParser(get_tokens_string(), get_grammar_string())
+    return GenericParser(get_tokens_string(), get_integer_grammar_string())
 
 
 def logic_expr_to_z3(tree: Tree) -> BoolRef:
@@ -93,14 +101,11 @@ def compile_exp_text_to_z3(exp_text: str) -> BoolRef:
     tree = tree_with_head.nodes[0].subtrees[0]
     return logic_expr_to_z3(tree)
 
-    
+
 def main():
     exp_text = "( ( ( x <= y ) or ( z < 3 ) ) and ( 1 < x ) )"
     # delete
-    parser = get_parser()
-    exp = "( x + x != 2 % y )"
-    x = parser(exp)
-    print(x)
+
     # end
     formula = compile_exp_text_to_z3(exp_text)
     print(formula)
@@ -112,4 +117,14 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    # main()
+    grammar_str = get_grammar_str({'x', 'y', 'w'}, 0, 4)
+    tokens_str = get_tokens_str({'x', 'y', 'w'}, 0, 4)
+    print(grammar_str)
+    print(tokens_str)
+    grammar = Grammar.from_string(grammar_str)
+    parser = GenericParser(tokens_str, grammar_str)
+
+    exp = "( x + x != 2 % y )"
+    x = parser(exp)
+    print(x)

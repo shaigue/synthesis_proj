@@ -3,7 +3,7 @@ from pathlib import Path
 from z3 import Solver, And, Not, sat
 
 from src.enumeration import find_loop_invariant
-from src.grammar.integers import compile_exp_text_to_z3, get_grammar_string
+from src.grammar.integers import compile_exp_text_to_z3, get_integer_grammar_string
 from src.test_utils.test_utils import load_test
 
 import config
@@ -24,7 +24,7 @@ def run_test(test_dir: Path):
 
     max_attempts = 20
     for attempt_i in range(max_attempts):
-        loop_invariant = find_loop_invariant(get_grammar_string(), positive_states, negative_states)
+        loop_invariant = find_loop_invariant(get_integer_grammar_string(), positive_states, negative_states)
         loop_invariant_z3 = compile_exp_text_to_z3(loop_invariant)
         s = Solver()
         s.add(And(loop_invariant_z3, Not(property_z3)))
