@@ -17,16 +17,12 @@ def evaluate_predicate(predicate: str, inputs: List[Dict]):
     for inp in inputs:
         try:
             val = eval(predicate, {}, inp)
-            # if isinstance(val, bool):
             ret += (eval(predicate, {}, inp),)
         except SyntaxError:
             # received an incomplete predicate, nothing ot eval
             return (predicate,)
         except ZeroDivisionError:
             ret += (None,)
-        except NameError:
-            # TODO - figure out how to handle this
-            ret += (None, )
 
     return ret
 
@@ -112,8 +108,7 @@ def enumerate_predicates(grammar: Grammar, positive_inputs: List[Dict], negative
                 yield ret
 
 
-def find_loop_invariant(grammar_string: str, positive_inputs: [List[Dict]], negative_inputs: List[Dict]) -> str:
-    grammar = Grammar.from_string(grammar_string)
+def find_loop_invariant(grammar: Grammar, positive_inputs: List[Dict], negative_inputs: List[Dict]) -> str:
     for pred in enumerate_predicates(grammar, positive_inputs, negative_inputs):
         positive_states_results = evaluate_predicate(pred, positive_inputs)
         negative_states_results = evaluate_predicate(pred, negative_inputs)
