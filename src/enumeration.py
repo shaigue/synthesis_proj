@@ -20,8 +20,6 @@ def evaluate_predicate(predicate: str, inputs: List[Dict]):
             # if isinstance(val, bool):
             ret += (eval(predicate, {}, inp),)
         except SyntaxError:
-            # TODO - this exception should not be thrown, since we are doing bottom up enumeration only valid predicates
-            #   should be evaluated
             # received an incomplete predicate, nothing ot eval
             return (predicate,)
         except ZeroDivisionError:
@@ -119,8 +117,7 @@ def find_loop_invariant(grammar_string: str, positive_inputs: [List[Dict]], nega
     for pred in enumerate_predicates(grammar, positive_inputs, negative_inputs):
         positive_states_results = evaluate_predicate(pred, positive_inputs)
         negative_states_results = evaluate_predicate(pred, negative_inputs)
-        # TODO - since the possible values can be True, False or None, and not only True or False, the previous check
-        #   was not exact. if there is None we don't want this predicate
+
         if not None in positive_states_results and not None in negative_states_results:
             if all(positive_states_results) and not any(negative_states_results):
                 return pred

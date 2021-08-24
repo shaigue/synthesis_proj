@@ -1,5 +1,5 @@
 {
     "property": "(0 <= y)",
-    "holds": true,
+    "holds": false,
     "exists_loop_invariant": true
 }
