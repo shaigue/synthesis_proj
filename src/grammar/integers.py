@@ -20,7 +20,7 @@ def get_grammar_string() -> str:
 
 
 def get_tokens_string() -> str:
-    return r"x|y|z|<=|<|!=|==|and|or|\)|\(|\+|-|\*|/|0|1|2|3|4|5%"
+    return r"x|y|z|<=|<|!=|==|and|or|\)|\(|\+|-|\*|/|0|1|2|3|4|5|%"
 
 
 def get_grammar() -> Grammar:
@@ -89,13 +89,19 @@ def compile_exp_text_to_z3(exp_text: str) -> BoolRef:
     parser = get_parser()
     tree_with_head = parser(exp_text)
     if tree_with_head is None:
-        raise RuntimeError(f"got invalid expression [{exp_text}]")
+        raise RuntimeError(f"got invalid expression {exp_text}")
     tree = tree_with_head.nodes[0].subtrees[0]
     return logic_expr_to_z3(tree)
 
     
 def main():
     exp_text = "( ( ( x <= y ) or ( z < 3 ) ) and ( 1 < x ) )"
+    # delete
+    parser = get_parser()
+    exp = "( x + x != 2 % y )"
+    x = parser(exp)
+    print(x)
+    # end
     formula = compile_exp_text_to_z3(exp_text)
     print(formula)
     s = Solver()

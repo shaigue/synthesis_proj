@@ -1,6 +1,0 @@
-{
-    "precondition": "",
-    "postcondition": "y >= 0",
-    "loop_invariant": "",
-    "correct": false
-}

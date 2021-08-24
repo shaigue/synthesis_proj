@@ -1,0 +1,5 @@
+{
+    "property": "(0 <= y)",
+    "holds": false,
+    "exists_loop_invariant": true
+}

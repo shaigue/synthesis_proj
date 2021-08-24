@@ -12,11 +12,31 @@ def load_test_positive_states(test_dir: Path) -> List[Dict[str, Any]]:
 
 
 def load_test_negative_states(test_dir: Path) -> List[Dict[str, Any]]:
-    # TODO - support smart negative states collections
     negative_states_path = test_dir / 'negative_states.json'
+    if not negative_states_path.exists():
+        return []
+
     with negative_states_path.open('r') as f:
         negative_states = json.load(f)
+
     return negative_states
+
+
+def load_test_logic(test_dir: Path) -> None:
+    logic_path = test_dir / 'logic.json'
+    with logic_path.open('r') as f:
+        logic = json.load(f)
+    return logic
+
+
+def load_test(test_dir: Path) -> Dict:
+    return {
+        'states': {
+            '+': load_test_positive_states(test_dir),
+            '-': load_test_negative_states(test_dir)
+        },
+        'logic': load_test_logic(test_dir)
+    }
 
 
 def iter_tests():
