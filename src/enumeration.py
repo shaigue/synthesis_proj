@@ -3,9 +3,11 @@ from parsing.earley.parser import Grammar
 from datetime import datetime
 from itertools import combinations
 import config
+from inspect import getmembers, isfunction
 
 from pathlib import Path
 from src.test_utils.positive_state_extractor import collect_positive_states_from_file
+import grammar.str_utils
 
 MAX_DEPTH = 4
 
@@ -16,12 +18,15 @@ def evaluate_predicate(predicate: str, inputs: List[Dict]):
     #   should be an invalid predicate
     for inp in inputs:
         try:
-            val = eval(predicate, {}, inp)
-            ret += (eval(predicate, {}, inp),)
+            functions = {name: func for name, func in getmembers(grammar.str_utils, isfunction)}
+            ret += (eval(predicate,functions , inp),)
         except SyntaxError:
             # received an incomplete predicate, nothing ot eval
             return (predicate,)
         except ZeroDivisionError:
+            ret += (None,)
+        except (TypeError, AttributeError, IndexError):
+            # Wrong value assigned to variable
             ret += (None,)
 
     return ret
