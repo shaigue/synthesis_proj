@@ -93,11 +93,11 @@ def run_string_tests():
     for test_dir in integer_tests_dir.iterdir():
         loop_invariant = run_test(test_dir, TestType.STRING)
         print(loop_invariant)
+        print(datetime.now())
 
 
 if __name__ == '__main__':
-    print(datetime.now())
-    run_integer_tests()
+    # print(datetime.now())
+    # run_integer_tests()
     print(datetime.now())
     run_string_tests()
-    print(datetime.now())
