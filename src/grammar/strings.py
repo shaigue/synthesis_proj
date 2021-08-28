@@ -66,7 +66,8 @@ def _get_grammar_str(arith_variables: Set[str], string_variables: Set[str], min_
     return "\n".join([
         "LEXPR -> ( AEXPR RELOP AEXPR ) | ( SEXPR RELOP SEXPR ) | ( LEXPR LOP LEXPR ) | SLFUNC",
         "SEXPR -> SVAR | SFUNC ",
-        "AEXPR -> AVAR | AEXPR AOP AEXPR | NUM | AFUNC ",
+        # "AEXPR -> AVAR | AEXPR AOP AEXPR | NUM | AFUNC ",
+        "AEXPR -> AVAR | NUM | AFUNC ",
         "NUM -> " + numbers_str,
         "SVAR -> " + string_variables_str,
         "AVAR -> " + arith_variable_str,
@@ -239,8 +240,8 @@ def _arith_expr_to_z3(tree: Tree) -> Union[ArithRef, int]:
 
 def main():
     print(_get_tokens_str({'x', 'y'}, 0, 5))
-    print(_get_grammar_str({'x', 'y'}, 0, 5))
-    s_parser = StringParser({'x', 'y'}, 0, 5)
+    print(_get_grammar_str(set(), {'x', 'y'}, 0, 5))
+    s_parser = StringParser(set(), {'x', 'y'}, 0, 5)
     print("---------------- 1 ----------------")
     exp1 = "(str_prefix_of(x,y) and str_contains(y, x))"
     z1 = s_parser.compile_to_z3(exp1)
@@ -252,7 +253,7 @@ def main():
     else:
         print("Unsat")
     print("---------------- 2 ----------------")
-    exp2 = "(((str_index_of(x, \"a\") < 3) or str_contains(y, str_concat(x, \"b\"))) and (3 < str_len(y)))"
+    exp2 = "(((str_index_of(x, y) < 3) or str_contains(y, str_concat(x, y))) and (3 < str_len(y)))"
     z2 = s_parser.compile_to_z3(exp2)
     print(z2)
     s = Solver()
@@ -272,7 +273,7 @@ def main():
     else:
         print("Unsat")
     print("---------------- 4 ----------------")
-    exp4 = "((str_char_at_index(x, 5) == \"a\") and (str_get_substring(x, 0, 2) == y))"
+    exp4 = "((str_char_at_index(x, 5) == y) and (str_get_substring(x, 0, 2) == y))"
     z4 = s_parser.compile_to_z3(exp4)
     print(z4)
     s = Solver()

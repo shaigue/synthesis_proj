@@ -19,14 +19,11 @@ def evaluate_predicate(predicate: str, inputs: List[Dict]):
     for inp in inputs:
         try:
             functions = {name: func for name, func in getmembers(grammar.str_utils, isfunction)}
-            ret += (eval(predicate,functions , inp),)
+            ret += (eval(predicate, functions, inp),)
         except SyntaxError:
             # received an incomplete predicate, nothing ot eval
             return (predicate,)
-        except ZeroDivisionError:
-            ret += (None,)
-        except (TypeError, AttributeError, IndexError):
-            # Wrong value assigned to variable
+        except (ZeroDivisionError, IndexError):
             ret += (None,)
 
     return ret
@@ -57,6 +54,10 @@ def predicates_from_rule_generator(rule: List[str], predicates, depth):
         if non_terminal in predicates[d] and predicates[d][non_terminal]:
             lookup_depth = d
             break
+
+    for evaluation, replacement in predicates[1].get(non_terminal, {}).items():
+        new_rule = rule[:non_terminal_index] + replacement.split(" ") + rule[non_terminal_index + 1:]
+        yield from predicates_from_rule_generator(new_rule, predicates, depth)
 
     for evaluation, replacement in predicates[lookup_depth].get(non_terminal, {}).items():
         new_rule = rule[:non_terminal_index] + replacement.split(" ") + rule[non_terminal_index + 1:]
@@ -124,53 +125,75 @@ def find_loop_invariant(grammar: Grammar, positive_inputs: List[Dict], negative_
 
 
 if __name__ == "__main__":
-    tokens = r"x|y|z|<=|<|!=|==|and|or|\)|\(|\+|-|\*|/|%"
-    grammar_string = r"""
-    LEXPR -> ( AEXPR RELOP AEXPR ) | ( LEXPR LOP LEXPR )
-    AEXPR -> VAR | AEXPR AOP AEXPR | NUM
-    NUM -> 1 | 2 | 3 | 4 | 5 | 0
-    VAR -> x | y | z | temp
-    RELOP -> == | != | < | <=
-    LOP -> and | or
-    AOP -> + | - | * | // | %
-    """
-
-    file = config.TESTS_DIR / 'integers' / '3' / 'program.py'
-    positive = collect_positive_states_from_file(file)
-    positive[0]['temp'] = -1
+    grammar_str = "\n".join([
+        "LEXPR -> ( AEXPR RELOP AEXPR ) | ( SEXPR RELOP SEXPR ) | ( LEXPR LOP LEXPR ) | SLFUNC",
+        "SEXPR -> SVAR | SFUNC ",
+        "AEXPR -> AVAR | AEXPR AOP AEXPR | NUM | AFUNC ",
+        "NUM -> 0|1|2|3|4|5",
+        "SVAR -> s1|s2",
+        "AVAR -> i",
+        # "CHAR -> " + chars_str,
+        "RELOP -> == | != | < | <=",
+        "LOP -> and | or",
+        "AOP -> + | - | * ",
+        "AFUNC -> str_index_of ( SEXPR , SEXPR ) | str_len ( SEXPR )",
+        "SLFUNC -> str_prefix_of ( SEXPR , SEXPR ) | str_suffix_of ( SEXPR , SEXPR ) |  str_contains ( SEXPR , SEXPR )",
+        "SFUNC -> str_get_substring ( SEXPR , AEXPR , AEXPR ) | str_char_at_index ( SEXPR , AEXPR ) | str_concat ( SEXPR , SEXPR ) | str_replace ( SEXPR , SEXPR , SEXPR )"
+    ])
+    grammar_obj = Grammar.from_string(grammar_str)
+    positive = [
+        {
+            "s1": "First string",
+            "s2": "Second string",
+            "i": 0
+        },
+        {
+            "s1": "First string",
+            "s2": "Second stringF",
+            "i": 1
+        },
+        {
+            "s1": "First string",
+            "s2": "Second stringFi",
+            "i": 2
+        },
+        {
+            "s1": "First string",
+            "s2": "Second stringFir",
+            "i": 3
+        },
+        {
+            "s1": "First string",
+            "s2": "Second stringFirs",
+            "i": 4
+        },
+        {
+            "s1": "First string",
+            "s2": "Second stringFirst",
+            "i": 5
+        },
+        {
+            "s1": "First string",
+            "s2": "Second stringFirst ",
+            "i": 6
+        },
+        {
+            "s1": "First string",
+            "s2": "Second stringFirst s",
+            "i": 7
+        },
+        {
+            "s1": "First string",
+            "s2": "Second stringFirst st",
+            "i": 8
+        },
+    ]
     negative = [
         {
-            "x": 6,
-            "temp": -21,
-            "z": 7,
-            "y": 86
-        },
-        {
-            "x": -87,
-            "temp": -31,
-            "z": 32,
-            "y": 1
-        },
-        {
-            "x": 89,
-            "temp": -93,
-            "z": -28,
-            "y": -75
-        },
-        {
-            "x": 76,
-            "temp": -15,
-            "z": -73,
-            "y": 64
-        },
-        {
-            "x": -52,
-            "temp": -96,
-            "z": 80,
-            "y": 12
+            "s1": "ab",
+            "s2": "",
+            "i": 2
         }
     ]
-    start = datetime.now()
-    print(start)
-    print(find_loop_invariant(grammar_string, positive, negative))
-    print(datetime.now() - start)
+    for le in find_loop_invariant(grammar_obj, positive, negative):
+        print(le)
