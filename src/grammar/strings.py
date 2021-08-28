@@ -10,9 +10,9 @@ from src.generic_parser import GenericParser
 
 
 class StringParser:
-    def __init__(self, variables: Set[str], min_num: int, max_num: int):
-        grammar_str = _get_grammar_str(variables, min_num, max_num)
-        tokens_str = _get_tokens_str(variables, min_num, max_num)
+    def __init__(self, arith_variables: Set[str], string_variables: Set[str], min_num: int, max_num: int):
+        grammar_str = _get_grammar_str(arith_variables, string_variables, min_num, max_num)
+        tokens_str = _get_tokens_str(arith_variables.union(string_variables), min_num, max_num)
         self.grammar = Grammar.from_string(grammar_str)
         self.parser = GenericParser(tokens_str, grammar_str)
 
@@ -31,8 +31,16 @@ def _get_num_str(min_num: int, max_num: int) -> str:
     return "|".join(map(str, range(min_num, max_num + 1)))
 
 
-def _get_var_str(variables: Set[str]) -> str:
+def _get_arith_var_str(variables: Set[str]) -> str:
     return "|".join(variables)
+
+
+def _get_string_var_str(variables: Set[str]) -> str:
+    return "|".join(variables)
+
+
+def _get_var_str(variables: Set[str]) -> str:
+    return _get_string_var_str(variables) + "|" + _get_arith_var_str(variables)
 
 
 def _get_char_str() -> str:
@@ -40,7 +48,7 @@ def _get_char_str() -> str:
     return "|".join(map(chr_to_str, range(ord('a'), ord('z') + 1))) + "|" + "|".join(map(chr_to_str, range(ord('A'), ord('Z') + 1)))
 
 
-def _get_grammar_str(variables: Set[str], min_num: int, max_num: int) -> str:
+def _get_grammar_str(arith_variables: Set[str], string_variables: Set[str], min_num: int, max_num: int) -> str:
     """
     This function generates the strings grammar:
     1. LEXPR - Logical expression (expression with boolean value)
@@ -51,16 +59,18 @@ def _get_grammar_str(variables: Set[str], min_num: int, max_num: int) -> str:
     6. SFUNC - A function that returns a string
     """
     numbers_str = _get_num_str(min_num, max_num)
-    variables_str = _get_var_str(variables)
-    chars_str = _get_char_str()
+    string_variables_str = _get_arith_var_str(string_variables)
+    arith_variable_str = _get_string_var_str(arith_variables)
+    # chars_str = _get_char_str()
 
     return "\n".join([
         "LEXPR -> ( AEXPR RELOP AEXPR ) | ( SEXPR RELOP SEXPR ) | ( LEXPR LOP LEXPR ) | SLFUNC",
-        "SEXPR -> VAR | SFUNC | CHAR",
-        "AEXPR -> VAR | AEXPR AOP AEXPR | NUM | AFUNC ",
+        "SEXPR -> SVAR | SFUNC ",
+        "AEXPR -> AVAR | AEXPR AOP AEXPR | NUM | AFUNC ",
         "NUM -> " + numbers_str,
-        "VAR -> " + variables_str,
-        "CHAR -> " + chars_str,
+        "SVAR -> " + string_variables_str,
+        "AVAR -> " + arith_variable_str,
+        # "CHAR -> " + chars_str,
         "RELOP -> == | != | < | <=",
         "LOP -> and | or",
         "AOP -> + | - | * ",
@@ -75,7 +85,7 @@ def _get_tokens_str(variables: Set[str], min_num: int = 0, max_num: int = 5) -> 
     logical_functions = "str_prefix_of|str_suffix_of|str_contains"
     arithmetic_functions = "str_index_of|str_len"
     return (r"<=|<|!=|==|and|or|\)|\(|\+|-|\*|," + '|' + _get_var_str(variables) + '|' + _get_num_str(min_num, max_num) +
-            "|" + _get_char_str() + "|" + string_functions + "|" + logical_functions + "|" + arithmetic_functions)
+            "|" + string_functions + "|" + logical_functions + "|" + arithmetic_functions)
 
 
 def _logic_expr_to_z3(tree: Tree) -> BoolRef:

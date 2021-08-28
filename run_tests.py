@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Set
 from enum import Enum
+from datetime import datetime
 
 from z3 import Solver, And, Not, sat, BoolRef
 
@@ -17,11 +18,12 @@ class TestType(Enum):
     STRING = 2
 
 
-def get_parser(test: TestType, variables: Set[str]):
+def get_parser(test: TestType, variables):
     if test == TestType.INTEGER:
         return IntegerParser(variables, config.MIN_NUM, config.MAX_NUM)
     elif test == TestType.STRING:
-        return StringParser(variables, config.MIN_NUM, config.MAX_NUM)
+        return StringParser({v for v in variables if not v.startswith('s')},
+                            {v for v in variables if v.startswith('s')}, config.MIN_NUM, config.MAX_NUM)
     else:
         assert False
 
@@ -40,7 +42,6 @@ def run_test(test_dir: Path, test: TestType):
     for counter_example_round_i in range(config.MAX_COUNTER_EXAMPLES_ROUNDS):
         loop_invariant = find_loop_invariant(parser.grammar, positive_states, negative_states)
         loop_invariant_z3 = parser.compile_to_z3(loop_invariant)
-        print(loop_invariant_z3)
         counter_example = _find_counter_example(loop_invariant_z3, property_z3, variables, default_value=0)
         if counter_example is not None:
             negative_states.append(counter_example)
@@ -95,5 +96,8 @@ def run_string_tests():
 
 
 if __name__ == '__main__':
-    # run_integer_tests()
+    print(datetime.now())
+    run_integer_tests()
+    print(datetime.now())
     run_string_tests()
+    print(datetime.now())
