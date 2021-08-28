@@ -19,7 +19,7 @@ def str_suffix_of(suf: str, s: str) -> bool:
     """
     return True iff suf is a suffix of s
     """
-    return s.startswith(suf)
+    return s.endswith(suf)
 
 
 def str_contains(a: str, b: str) -> bool:
