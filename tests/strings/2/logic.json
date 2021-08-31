@@ -1,0 +1,5 @@
+{
+    "property": "((i > j) and str_prefix_of(s2, s)) or ((i <= j) and str_prefix_of(s1,s))",
+    "holds": true,
+    "exists_loop_invariant": true
+}
