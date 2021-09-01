@@ -64,7 +64,7 @@ def _get_grammar_str(arith_variables: Set[str], string_variables: Set[str], min_
     # chars_str = _get_char_str()
 
     return "\n".join([
-        "LEXPR -> ( AEXPR RELOP AEXPR ) | ( SEXPR RELOP SEXPR ) | ( LEXPR LOP LEXPR ) | SLFUNC",
+        "LEXPR -> AEXPR RELOP AEXPR | SEXPR RELOP SEXPR | LEXPR LOP LEXPR | SLFUNC",
         "SEXPR -> SVAR | SFUNC ",
         # "AEXPR -> AVAR | AEXPR AOP AEXPR | NUM | AFUNC ",
         "AEXPR -> AVAR | NUM | AFUNC ",
@@ -77,7 +77,8 @@ def _get_grammar_str(arith_variables: Set[str], string_variables: Set[str], min_
         "AOP -> + | - | * ",
         "AFUNC -> str_index_of ( SEXPR , SEXPR ) | str_len ( SEXPR )",
         "SLFUNC -> str_prefix_of ( SEXPR , SEXPR ) | str_suffix_of ( SEXPR , SEXPR ) |  str_contains ( SEXPR , SEXPR )",
-        "SFUNC -> str_get_substring ( SEXPR , AEXPR , AEXPR ) | str_char_at_index ( SEXPR , AEXPR ) | str_concat ( SEXPR , SEXPR ) | str_replace ( SEXPR , SEXPR , SEXPR )"
+        "SFUNC -> str_get_substring ( SEXPR , AEXPR , AEXPR ) | str_char_at_index ( SEXPR , AEXPR ) | "
+        "str_concat ( SEXPR , SEXPR ) | str_replace ( SEXPR , SEXPR , SEXPR )"
     ])
 
 

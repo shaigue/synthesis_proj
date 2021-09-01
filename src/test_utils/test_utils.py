@@ -33,7 +33,7 @@ def _load_test_logic(test_dir: Path) -> Dict[str, Any]:
 class SynthesizerTest:
     program: str
     positive_states: List[Dict[str, Any]]
-    negative_state: List[Dict[str, Any]]
+    negative_states: List[Dict[str, Any]]
     safety_property: str
     is_correct: bool
     exists_loop_invariant: bool
@@ -45,7 +45,7 @@ def load_test(test_dir: Path) -> SynthesizerTest:
     return SynthesizerTest(
         program=program,
         positive_states=_load_test_positive_states(test_dir),
-        negative_state=_load_test_negative_states(test_dir),
+        negative_states=_load_test_negative_states(test_dir),
         safety_property=logic['property'],
         is_correct=logic['holds'],
         exists_loop_invariant=logic['exists_loop_invariant']

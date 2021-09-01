@@ -97,7 +97,5 @@ def run_string_tests():
 
 
 if __name__ == '__main__':
-    # print(datetime.now())
     # run_integer_tests()
-    print(datetime.now())
     run_string_tests()
