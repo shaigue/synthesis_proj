@@ -7,7 +7,7 @@ from inspect import getmembers, isfunction
 
 from pathlib import Path
 from src.test_utils.positive_state_extractor import collect_positive_states_from_file
-import grammar.str_utils
+import src.grammar.str_utils
 
 MAX_DEPTH = 4
 

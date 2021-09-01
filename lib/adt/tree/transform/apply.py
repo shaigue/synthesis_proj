@@ -8,11 +8,11 @@ class ApplyTo(object):
         
     def inplace(self, tree):
         for node in PreorderWalk(tree):
-            node.root = self.noperation(node.root)
+            node.func = self.noperation(node.func)
         return tree
     
     def asnew(self, tree):
-        root = self.noperation(tree.root)
+        root = self.noperation(tree.func)
         subtrees = [self.asnew(s) for s in tree.subtrees]
         return type(tree)(root, subtrees)
 

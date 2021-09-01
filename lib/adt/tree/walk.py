@@ -115,4 +115,4 @@ if __name__ == '__main__':
     for input in inputs: #@ReservedAssignment
         tree = TreeAssistant.build(input)
         print(tree)
-        print([x.root for x in PreorderWalk(tree)])
+        print([x.func for x in PreorderWalk(tree)])

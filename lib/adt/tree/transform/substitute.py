@@ -37,9 +37,9 @@ class TreeSubstitution(TreeSubstitutionBase):
                 compare_with = w
             else:
                 compare_with = type(tree)(w)
-            if tree.root == w and isinstance(self.replace_with, list):
+            if tree.func == w and isinstance(self.replace_with, list):
                 return type(tree)([], self.replace_with)
-            if tree.root == w and not isinstance(self.replace_with, type(tree)):
+            if tree.func == w and not isinstance(self.replace_with, type(tree)):
                 return TreeTransform.Scalar(self.replace_with)
             elif tree == compare_with:
                 if isinstance(self.replace_with, list):

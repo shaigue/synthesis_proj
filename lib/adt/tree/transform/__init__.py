@@ -25,7 +25,7 @@ class TreeTransform(object):
         @return a new Tree with the transformed nodes
         """
         def at_root(tree, cont):
-            root = tree.root
+            root = tree.func
             for transformer in self.transformers:
                 tree_tag = transformer(tree)
                 if tree_tag is not None:
@@ -33,7 +33,7 @@ class TreeTransform(object):
                         root = tree_tag.value
                         break
                     else:
-                        tree_tag = self._in_your_place(tree.root, tree_tag)
+                        tree_tag = self._in_your_place(tree.func, tree_tag)
                         return self._reapply(tree_tag, transformer)
             else:
                 root = self.scalar_transform(root) or root
@@ -47,8 +47,8 @@ class TreeTransform(object):
         if self.dir == self.TOP_DOWN:
             t = at_root(tree, cont=descend)
         else:
-            t = at_root(descend(tree.root, tree.subtrees), cont=type(tree))
-        return self._in_your_place(tree.root, t)
+            t = at_root(descend(tree.func, tree.subtrees), cont=type(tree))
+        return self._in_your_place(tree.func, t)
         
     def inplace(self, tree, out_diff=None, descent=True):
         """
@@ -67,17 +67,17 @@ class TreeTransform(object):
                 tree_tag = transformer(tree)
                 if tree_tag is not None:
                     if isinstance(tree_tag, self.Scalar):
-                        dif((tree.root, tree_tag.value))
-                        tree.root = self._in_your_place(tree.root, tree_tag.value)
+                        dif((tree.func, tree_tag.value))
+                        tree.func = self._in_your_place(tree.func, tree_tag.value)
                         break
                     else:
-                        tree_tag = self._in_your_place(tree.root, tree_tag)
+                        tree_tag = self._in_your_place(tree.func, tree_tag)
                         dif((tree, tree_tag))
                         return self._reapply(tree_tag, transformer, inplace=True)
             else:
-                new_root = self.scalar_transform(tree.root)
+                new_root = self.scalar_transform(tree.func)
                 if new_root is not None:
-                    tree.root = new_root
+                    tree.func = new_root
         # descend
         def descend(tree):
             if descent:
@@ -104,7 +104,7 @@ class TreeTransform(object):
     def flatten(self, ltrees):
         i = 0
         while i < len(ltrees):
-            if ltrees[i].root == []:
+            if ltrees[i].func == []:
                 ltrees[i:i+1] = ltrees[i].subtrees
             else:
                 i += 1

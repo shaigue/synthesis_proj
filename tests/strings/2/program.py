@@ -7,7 +7,7 @@ t = 10
 while i < t and j < t:
     if i == j:
         i = i + 1
-        s = s2 + s  # i > j
+        s = s2 + s
     else:
         j = j + 1
-        s = s1 + s  # i == j
+        s = s1 + s

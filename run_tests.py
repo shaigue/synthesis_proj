@@ -30,14 +30,14 @@ def get_parser(test: TestType, variables):
 
 def run_test(test_dir: Path, test: TestType):
     test_data = load_test(test_dir)
-    positive_states = test_data['states']['+']
-    negative_states = test_data['states']['-']
+    positive_states = test_data.positive_states
+    negative_states = test_data.negative_states
 
     variables = _get_variables(positive_states + negative_states)
     # parser = IntegerParser(variables, config.MIN_NUM, config.MAX_NUM)
     parser = get_parser(test, variables)
 
-    property_z3 = parser.compile_to_z3(test_data['logic']['property'])
+    property_z3 = parser.compile_to_z3(test_data.safety_property)
 
     for counter_example_round_i in range(config.MAX_COUNTER_EXAMPLES_ROUNDS):
         loop_invariant = find_loop_invariant(parser.grammar, positive_states, negative_states)

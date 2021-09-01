@@ -22,7 +22,7 @@ class ScanFor(object):
     
     PATH = lambda path: path
     NODE = lambda path: path.end
-    VALUE = lambda path: path.end.root
+    VALUE = lambda path: path.end.func
     
     def __init__(self, criterion, applies_to=NODE):
         self.criterion = criterion

@@ -22,7 +22,7 @@ class TreeRootPattern(TreePattern):
         self.fan = fan
     
     def match(self, tree):
-        r = tree.root
+        r = tree.func
         s = tree.subtrees
         if r == self.symbol and (self.fan is None or self.fan == len(s)):
             numeral = lambda i: ("$%d"%(i+1))
@@ -37,7 +37,7 @@ class TreeRootCriterion(TreePattern):
         self.fan = fan
     
     def match(self, tree):
-        r = tree.root
+        r = tree.func
         s = tree.subtrees
         if self.criterion(r) and (self.fan is None or self.fan == len(s)):
             numeral = lambda i: ("$%d"%(i+1))
@@ -59,12 +59,12 @@ class TreeTopPattern(TreePattern):
             return self.MatchObject(tree, comp)
     
     def _match(self, pattern, text):
-        pr = pattern.root
-        tr = text.root
+        pr = pattern.func
+        tr = text.func
         if self._is_subtree_placeholder(pr):
             return {pr: text}
         elif self._is_node_placeholder(pr):
-            return self._rematch_subtrees(pattern, text, {pr: text.root})
+            return self._rematch_subtrees(pattern, text, {pr: text.func})
         else:
             rmo = self.scalar_match(pr, tr)
             if rmo is not None:
@@ -84,8 +84,8 @@ class TreeTopPattern(TreePattern):
     def _rematch_subtrees(self, pattern, text, acc):
         ps = pattern.subtrees
         ts = text.subtrees
-        ellipsis = [i for i in range(len(ps)) 
-                    if self._is_subtrees_placeholder(ps[i].root)] 
+        ellipsis = [i for i in range(len(ps))
+                    if self._is_subtrees_placeholder(ps[i].func)]
         if not ellipsis and len(ps) == len(ts):
             for i in range(len(ps)):
                 mo = self._match(ps[i], ts[i])
@@ -102,7 +102,7 @@ class TreeTopPattern(TreePattern):
                 mo = self._match(ps[-1-i], ts[-1-i])
                 if mo is None: return None
                 acc.update(mo)
-            acc[ps[ellipsis[0]].root] = ts[ellipsis[0]:ellipsis[0]+len(ts)-len(ps)+1]
+            acc[ps[ellipsis[0]].func] = ts[ellipsis[0]:ellipsis[0] + len(ts) - len(ps) + 1]
             return acc
         else:
             return None

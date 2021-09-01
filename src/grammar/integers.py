@@ -57,9 +57,9 @@ def _logic_expr_to_z3(tree: Tree) -> BoolRef:
     assert tree.root == "LEXPR"
 
     _, expr1, op_node, expr2, _ = tree.subtrees
-    op = op_node.leaves[0].root
+    op = op_node.leaves[0].func
 
-    if op_node.root == "RELOP":
+    if op_node.func == "RELOP":
         expr1 = _arith_expr_to_z3(expr1)
         expr2 = _arith_expr_to_z3(expr2)
         if op == "==":
@@ -71,7 +71,7 @@ def _logic_expr_to_z3(tree: Tree) -> BoolRef:
         if op == "<=":
             return expr1 <= expr2
 
-    if op_node.root == "LOP":
+    if op_node.func == "LOP":
         expr1 = _logic_expr_to_z3(expr1)
         expr2 = _logic_expr_to_z3(expr2)
         if op == "and":
@@ -84,7 +84,7 @@ def _arith_expr_to_z3(tree: Tree) -> Union[ArithRef, int]:
     assert tree.root == "AEXPR"
 
     if len(tree.subtrees) == 1:
-        terminal = tree.leaves[0].root
+        terminal = tree.leaves[0].func
         if terminal.isnumeric():
             return int(terminal)
         else:
@@ -94,7 +94,7 @@ def _arith_expr_to_z3(tree: Tree) -> Union[ArithRef, int]:
         expr1, op, expr2 = tree.subtrees
         expr1 = _arith_expr_to_z3(expr1)
         expr2 = _arith_expr_to_z3(expr2)
-        op = op.leaves[0].root
+        op = op.leaves[0].func
         if op == '+':
             return expr1 + expr2
         if op == '-':

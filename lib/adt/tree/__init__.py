@@ -34,7 +34,7 @@ class Tree(object):
     
     @classmethod
     def reconstruct(cls, t):
-        return cls(t.root, [cls.reconstruct(s) for s in t.subtrees])
+        return cls(t.func, [cls.reconstruct(s) for s in t.subtrees])
         
     @property
     def nodes(self):
@@ -47,7 +47,7 @@ class Tree(object):
     @property
     def terminals(self):
         """ @return a list of the values located at the leaf nodes. """
-        return [n.root for n in self.leaves]
+        return [n.func for n in self.leaves]
 
     @property
     def depth(self):
