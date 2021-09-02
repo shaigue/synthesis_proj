@@ -101,11 +101,20 @@ def _init_value_vector_to_expr(examples: List[Dict[str, Any]], constants: List):
     return typed_value_vector_to_expr
 
 
+# TODO: move somewhere else
+def get_module_functions(module):
+    return [getattr(module, attr) for attr in dir(module) if not attr.startswith(('_', 'get_'))]
+
+
 def main():
-    from src.library.integers import add, sub, eq
-    functions = [add, sub, eq]
-    constants = [0, 1]
+    from src.library import booleans
+    from src.library import integers
+
+    functions = get_module_functions(integers)
+    functions += get_module_functions(booleans)
+    constants = integers.get_constants()
     examples = [{'x': 0, 'y': 0}, {'x': 1, 'y': -1}]
+
     for i, (value_vector, expr) in enumerate(bottom_up_enumeration_with_observational_equivalence(examples, functions,
                                                                                                   constants)):
         print(i)
