@@ -1,11 +1,12 @@
-from typing import Callable, List, Dict, Any
+from typing import Callable, List, Dict, Any, Type
 
-from z3 import And
+from z3 import And, BoolRef, Solver, Not, sat, Implies, Int
 
-from src.enumeration.enumeration import bottom_up_enumeration_with_observational_equivalence
+from src.enumeration_new import bottom_up_enumeration_with_observational_equivalence
 
 
-# TODO: maybe for every different set of input (strings, integers, arrays assign a function, constants
+# TODO: give timeout parameters in case the synthesizer does not find any solution
+# TODO: maybe for every different set of input (strings, integers, arrays) assign a function, constants
 def find_satisfying_expr(positive_examples: List[Dict[str, Any]], negative_examples: List[Dict[str, Any]],
                          functions: List[Callable], constants: List):
     examples = positive_examples + negative_examples
@@ -34,13 +35,63 @@ def find_satisfying_expr(positive_examples: List[Dict[str, Any]], negative_examp
                 return expr
 
 
+def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions: List[Callable], constants: List,
+                              property_to_prove: BoolRef, max_counter_examples=10):
+    var_name_to_type = {name: type(value) for name, value in positive_examples[0].items()}
+    negative_examples = []
+
+    for counter_example_i in range(max_counter_examples):
+        assumption = find_satisfying_expr(positive_examples, negative_examples, functions, constants)
+        counter_example = _find_counter_example(assumption, property_to_prove, var_name_to_type)
+        if counter_example is None:
+            return assumption
+        else:
+            negative_examples.append(counter_example)
+
+
+def _find_counter_example(a: BoolRef, b: BoolRef, var_name_to_type: Dict[str, Type]):
+    s = Solver()
+    s.add(Not(Implies(a, b)))
+    res = s.check()
+
+    if res == sat:
+        counter_example = {}
+        for var_name, t in var_name_to_type.items():
+            # TODO: add support to arrays
+            if t == int:
+                counter_example[var_name] = 0
+            elif t == str:
+                counter_example[var_name] = ""
+            else:
+                assert False, f"Does not support {t}"
+
+        model = s.model()
+        for model_var in model:
+            var_name = str(model_var)
+            if var_name in var_name_to_type:
+                # TODO: add support to arrays
+                t = var_name_to_type[var_name]
+                value = model[model_var]
+                if t == int:
+                    value = value.as_long()
+                elif t == str:
+                    value = value.as_string()
+                else:
+                    assert False, f"Does not support {t}"
+
+                counter_example[var_name] = value
+
+        return counter_example
+
+
 def main():
-    from src.library.integer_functions import add, sub, eq, lt, mul
-    positive_examples = [{'x': 10, 'y': 1}, {'x': 2, 'y': 13}, {'x': 2, 'y': 2}]
-    negative_examples = [{'x': 1, 'y': -2}, {'x': -1, 'y': -2}, {'x': -1, 'y': 3}]
+    from src.library.integers import add, sub, eq, lt, mul
+    positive_examples = [{'x': 10, 'y': 1}, {'x': 20, 'y': 13}, {'x': 12, 'y': 2}]
+    # negative_examples = [{'x': 1, 'y': -2}, {'x': -1, 'y': -2}, {'x': -1, 'y': 3}]
+    safety_property = And(Int('x') > 2, Int('y') > 0, Int('x') > Int('y'))
     functions = [add, sub, eq, lt, mul]
     constants = [0, 1]
-    expr = find_satisfying_expr(positive_examples, negative_examples, functions, constants)
+    expr = counter_example_synthesis(positive_examples, functions, constants, safety_property)
     print(expr)
 
 

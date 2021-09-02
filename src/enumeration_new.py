@@ -102,7 +102,7 @@ def _init_value_vector_to_expr(examples: List[Dict[str, Any]], constants: List):
 
 
 def main():
-    from src.library.integer_functions import add, sub, eq
+    from src.library.integers import add, sub, eq
     functions = [add, sub, eq]
     constants = [0, 1]
     examples = [{'x': 0, 'y': 0}, {'x': 1, 'y': -1}]

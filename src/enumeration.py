@@ -1,3 +1,4 @@
+# TODO: if it is not needed anymore, delete this file
 from typing import List, Dict
 from parsing.earley.parser import Grammar
 from datetime import datetime
