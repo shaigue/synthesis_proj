@@ -9,11 +9,11 @@ def get_constants():
     return [0, 1]
 
 
-def add(x: int, y: int, to_z3=False) -> int:
+def int_add(x: int, y: int, to_z3=False) -> int:
     return x + y
 
 
-def sub(x: int, y: int, to_z3=False) -> int:
+def int_sub(x: int, y: int, to_z3=False) -> int:
     return x - y
 
 
@@ -21,9 +21,9 @@ def sub(x: int, y: int, to_z3=False) -> int:
 #     return x * y
 
 
-def eq(x: int, y: int, to_z3=False) -> bool:
+def int_eq(x: int, y: int, to_z3=False) -> bool:
     return x == y
 
 
-def lt(x: int, y: int, to_z3=False) -> bool:
+def int_lt(x: int, y: int, to_z3=False) -> bool:
     return x < y

@@ -1,7 +1,16 @@
 """Functions for the string predicate language"""
 from z3 import SubString, Concat, Replace, PrefixOf, SuffixOf, Contains, IndexOf, Length
 
-# TODO: maybe start with a limited set of options, and then
+# TODO: maybe start with a limited set of options, and then increase the number of predicates
+
+
+def get_constants():
+    # TODO: maybe make that strings are over uppercase alphabet?
+    return []
+
+
+def str_eq(s1: str, s2: str, to_z3=False) -> bool:
+    return s1 == s2
 
 
 def str_len(s: str, to_z3=False) -> int:
@@ -45,6 +54,7 @@ def str_index_of(s: str, substr: str, to_z3=False) -> int:
 
 # TODO: I think that this function is redundant, since it's functionality is contained in
 #  substr function, should be deleted?
+# TODO: add string equivalence function
 # def str_char_at_index(s: str, index: int, to_z3=False) -> str:
 #     if to_z3:
 #         return SubString(s, index, 1)

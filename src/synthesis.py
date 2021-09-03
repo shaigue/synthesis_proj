@@ -85,12 +85,11 @@ def _find_counter_example(a: BoolRef, b: BoolRef, var_name_to_type: Dict[str, Ty
 
 
 def main():
-    from src.library.integers import add, sub, eq, lt, mul
+    from src.library import get_int_functions_and_constants
     positive_examples = [{'x': 10, 'y': 1}, {'x': 20, 'y': 13}, {'x': 12, 'y': 2}]
     # negative_examples = [{'x': 1, 'y': -2}, {'x': -1, 'y': -2}, {'x': -1, 'y': 3}]
     safety_property = And(Int('x') > 2, Int('y') > 0, Int('x') > Int('y'))
-    functions = [add, sub, eq, lt, mul]
-    constants = [0, 1]
+    functions, constants = get_int_functions_and_constants()
     expr = counter_example_synthesis(positive_examples, functions, constants, safety_property)
     print(expr)
 
