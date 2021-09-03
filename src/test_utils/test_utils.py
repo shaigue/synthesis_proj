@@ -1,7 +1,10 @@
+import importlib.util
 import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List
+
+from z3 import BoolRef
 
 from src.test_utils.positive_state_extractor import collect_positive_states_from_file
 
@@ -29,6 +32,14 @@ def _load_test_logic(test_dir: Path) -> Dict[str, Any]:
     return logic
 
 
+def _load_safety_property(test_dir: Path) -> BoolRef:
+    script_path = test_dir / 'safety_property.py'
+    spec = importlib.util.spec_from_file_location("safety_property", script_path)
+    safety_property = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(safety_property)
+    return safety_property.get_safety_property()
+
+
 @dataclass
 class SynthesizerTest:
     program: str
@@ -46,7 +57,13 @@ def load_test(test_dir: Path) -> SynthesizerTest:
         program=program,
         positive_states=_load_test_positive_states(test_dir),
         negative_states=_load_test_negative_states(test_dir),
-        safety_property=logic['property'],
+        # safety_property=logic['property'],
+        safety_property=_load_safety_property(test_dir),
         is_correct=logic['holds'],
         exists_loop_invariant=logic['exists_loop_invariant']
     )
+
+
+def load_positive_examples_and_safety_property(test_dir: Path):
+    test_data = load_test(test_dir)
+    return test_data.positive_states, test_data.safety_property
