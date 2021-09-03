@@ -33,7 +33,7 @@ def str_get_substring(s: str, offset: int, length: int) -> str:
     """
     get a substring of s
     :param s: string to get substring from
-    :param offset: from which offset to start the substring
+    :param offset: from which start_index to start the substring
     :param length: length of the substring
     :return: a substring of s (slice by copy)
     """
@@ -72,6 +72,6 @@ def str_concat(a: str, b: str) -> str:
 
 def str_replace(s: str, src: str, dst: str) -> str:
     """
-    replace the first occurrence of src in s with dst
+    replace the first occurrence of old in s with new
     """
     return s.replace(src, dst, 1)
