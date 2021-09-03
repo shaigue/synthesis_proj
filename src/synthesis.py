@@ -2,7 +2,7 @@ from typing import Callable, List, Dict, Any, Type
 
 from z3 import And, BoolRef, Solver, Not, sat, Implies, Int
 
-from src.enumeration_new import bottom_up_enumeration_with_observational_equivalence
+from src.enumeration import bottom_up_enumeration_with_observational_equivalence
 
 
 # TODO: give timeout parameters in case the synthesizer does not find any solution
