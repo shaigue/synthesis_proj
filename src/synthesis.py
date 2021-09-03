@@ -36,7 +36,7 @@ def find_satisfying_expr(positive_examples: List[Dict[str, Any]], negative_examp
 
 
 def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions: List[Callable], constants: List,
-                              property_to_prove: BoolRef, max_counter_examples=10):
+                              property_to_prove: BoolRef, max_counter_examples=20):
     # TODO: what if one of the positive examples does not satisfy the the property to prove?
     #  if so, we can be certain that we don't have any loop invariant. add this check
 

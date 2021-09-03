@@ -12,8 +12,10 @@ def run_tests(tests_dir: Path, functions, constants):
         positive_examples, safety_property = load_positive_examples_and_safety_property(test_dir)
         loop_invariant = counter_example_synthesis(positive_examples, functions, constants,
                                                    safety_property)
-
-        print(f"***loop_invariant found:{loop_invariant}***")
+        if loop_invariant is None:
+            print(f"***Loop invariant not found***")
+        else:
+            print(f"***loop_invariant found:{loop_invariant}***")
 
 
 def run_integer_tests():

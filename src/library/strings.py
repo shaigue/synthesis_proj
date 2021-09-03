@@ -37,12 +37,12 @@ def str_contains(s: str, substr: str, to_z3=False) -> bool:
     return substr in s
 
 
-def str_get_substr(s: str, start_index: int, length: int, to_z3=False) -> str:
-    # TODO: this might throw an exception for different values of parameters,
-    #  so make sure to deal with those in the enumeration procedure
-    if to_z3:
-        return SubString(s, start_index, length)
-    return s[start_index:start_index+length]
+# def str_get_substr(s: str, start_index: int, length: int, to_z3=False) -> str:
+#     # TODO: this might throw an exception for different values of parameters,
+#     #  so make sure to deal with those in the enumeration procedure
+#     if to_z3:
+#         return SubString(s, start_index, length)
+#     return s[start_index:start_index+length]
 
 
 def str_index_of(s: str, substr: str, to_z3=False) -> int:
@@ -61,15 +61,15 @@ def str_index_of(s: str, substr: str, to_z3=False) -> int:
 #     return s[index]
 
 
-def str_concat(s1: str, s2: str, to_z3=False) -> str:
-    if to_z3:
-        return Concat(s1, s2)
-    return s1 + s2
+# def str_concat(s1: str, s2: str, to_z3=False) -> str:
+#     if to_z3:
+#         return Concat(s1, s2)
+#     return s1 + s2
 
 
-def str_replace(s: str, old: str, new: str, to_z3=False) -> str:
-    # TODO: does it work well also when the old string is not contained s?
-    if to_z3:
-        return Replace(s, old, new)
-    return s.replace(old, new, 1)
+# def str_replace(s: str, old: str, new: str, to_z3=False) -> str:
+#     # TODO: does it work well also when the old string is not contained s?
+#     if to_z3:
+#         return Replace(s, old, new)
+#     return s.replace(old, new, 1)
 
