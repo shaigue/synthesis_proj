@@ -70,6 +70,6 @@ def str_concat(s1: str, s2: str, to_z3=False) -> str:
 def str_replace(s: str, old: str, new: str, to_z3=False) -> str:
     # TODO: does it work well also when the old string is not contained s?
     if to_z3:
-        Replace(s, old, new)
+        return Replace(s, old, new)
     return s.replace(old, new, 1)
 

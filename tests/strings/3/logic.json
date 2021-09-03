@@ -1,5 +1,5 @@
 {
     "property": "str_index_of(s, 'x') == 0",
     "holds": true,
-    "exists_loop_invariant": true
+    "exists_loop_invariant": false
 }
