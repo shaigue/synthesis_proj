@@ -1,0 +1,5 @@
+{
+    "property": "str_len(s) < str_len(s1)",
+    "holds": false,
+    "exists_loop_invariant": false
+}

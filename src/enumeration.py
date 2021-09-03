@@ -1,199 +1,117 @@
-from typing import List, Dict
-from parsing.earley.parser import Grammar
-from datetime import datetime
-from itertools import combinations
-import config
-from inspect import getmembers, isfunction
+"""
+In this work we assume a very simple grammar, similar to FOL.
+The grammar contains functions, variables, and constants.
+Height 0 contains the constants and the variables, and functions are applied to increase the depth.
+"""
+import inspect
+import itertools
+from collections import defaultdict
+from typing import List, Callable, Any, Dict, Tuple, Type
 
-from pathlib import Path
-from src.test_utils.positive_state_extractor import collect_positive_states_from_file
-import grammar.str_utils
-
-MAX_DEPTH = 4
-
-
-def evaluate_predicate(predicate: str, inputs: List[Dict]):
-    ret = tuple()
-    # TODO - can throw a NameError when one of the variables in the predicate are not defined in the state.
-    #   should be an invalid predicate
-    for inp in inputs:
-        try:
-            functions = {name: func for name, func in getmembers(grammar.str_utils, isfunction)}
-            ret += (eval(predicate, functions, inp),)
-        except SyntaxError:
-            # received an incomplete predicate, nothing ot eval
-            return (predicate,)
-        except (ZeroDivisionError, IndexError):
-            ret += (None,)
-
-    return ret
+from z3 import Int, String, IntVal, StringVal
 
 
-def is_final(predicate: List[str]) -> bool:
-    for word in predicate:
-        if word.isupper():
-            return False
-    return True
+def bottom_up_enumeration_with_observational_equivalence(examples: List[Dict[str, Any]], functions: List[Callable],
+                                                         constants: List[Any]):
+    typed_value_vector_to_expr = _init_value_vector_to_expr(examples, constants)
+
+    while True:
+        new_typed_value_vector_to_expr = defaultdict(dict)
+
+        for func in functions:
+            for value_vector_list, expr_list in _iter_params(func, typed_value_vector_to_expr):
+                value_vector = tuple(func(*params) for params in zip(*value_vector_list))
+                t = type(value_vector[0])
+
+                if value_vector not in typed_value_vector_to_expr[t] and \
+                        value_vector not in new_typed_value_vector_to_expr[t]:
+                    expr = func(*expr_list, to_z3=True)
+                    new_typed_value_vector_to_expr[t][value_vector] = expr
+                    yield value_vector, expr
+
+        if len(new_typed_value_vector_to_expr) == 0:
+            return
+
+        for t, new_value_vector_to_expr in new_typed_value_vector_to_expr.items():
+            if t in typed_value_vector_to_expr:
+                typed_value_vector_to_expr[t].update(new_value_vector_to_expr)
+            else:
+                typed_value_vector_to_expr[t] = new_value_vector_to_expr
 
 
-def predicates_from_rule_generator(rule: List[str], predicates, depth):
-    if is_final(rule):
-        yield ' '.join(rule)
+def _iter_params(func: Callable, typed_value_vector_to_expr: Dict[Type, Dict[Tuple, str]]):
+    """Assumes that the functions are annotated with types, and the last parameter is "to_z3"."""
+    func_sig = inspect.signature(func)
+    product_sets = []
+    for param in list(func_sig.parameters.values())[:-1]:
+        t = param.annotation
+        product_sets.append(typed_value_vector_to_expr[t].items())
 
-    non_terminal_index = 0
-    non_terminal = ""
-    for i, word in enumerate(rule):
-        if word.isupper():
-            non_terminal_index = i
-            non_terminal = word
+    for value_vector_expr_pair_list in itertools.product(*product_sets):
+        value_vector_list = []
+        expr_list = []
+
+        for value_vector, expr in value_vector_expr_pair_list:
+            value_vector_list.append(value_vector)
+            expr_list.append(expr)
+
+        yield value_vector_list, expr_list
+
+
+def _const_to_z3(constant):
+    # TODO: add support for array types
+    t = type(constant)
+    if t == int:
+        return IntVal(constant)
+    if t == str:
+        return StringVal(constant)
+    raise NotImplementedError(f"type {t} is not supported")
+
+
+def _var_to_z3(name: str, t: Type):
+    # TODO: add support for array types
+    if t == int:
+        return Int(name)
+    if t == str:
+        return String(name)
+    raise NotImplementedError(f"type {t} is not supported")
+
+
+def _init_value_vector_to_expr(examples: List[Dict[str, Any]], constants: List):
+    typed_value_vector_to_expr = defaultdict(dict)
+
+    for constant in constants:
+        value_vector = (constant,) * len(examples)
+        t = type(value_vector[0])
+        if value_vector not in typed_value_vector_to_expr[t]:
+            typed_value_vector_to_expr[t][value_vector] = _const_to_z3(constant)
+
+    variables = set()
+    for example in examples:
+        variables.update(example.keys())
+
+    for variable in variables:
+        value_vector = tuple(example[variable] for example in examples)
+        t = type(value_vector[0])
+        if value_vector not in typed_value_vector_to_expr[t]:
+            typed_value_vector_to_expr[t][value_vector] = _var_to_z3(variable, t)
+
+    return typed_value_vector_to_expr
+
+
+def main():
+    from src.library import get_int_functions_and_constants
+    functions, constants = get_int_functions_and_constants()
+    examples = [{'x': 0, 'y': 0}, {'x': 1, 'y': -1}]
+
+    for i, (value_vector, expr) in enumerate(bottom_up_enumeration_with_observational_equivalence(examples, functions,
+                                                                                                  constants)):
+        print(i)
+        print(expr)
+        print(value_vector)
+        if i == 100:
             break
 
-    # Find the deepest depth in which we have programs to replace the non terminal
-    lookup_depth = depth - 1
-    for d in range(lookup_depth, -1, -1):
-        if non_terminal in predicates[d] and predicates[d][non_terminal]:
-            lookup_depth = d
-            break
 
-    for evaluation, replacement in predicates[1].get(non_terminal, {}).items():
-        new_rule = rule[:non_terminal_index] + replacement.split(" ") + rule[non_terminal_index + 1:]
-        yield from predicates_from_rule_generator(new_rule, predicates, depth)
-
-    for evaluation, replacement in predicates[lookup_depth].get(non_terminal, {}).items():
-        new_rule = rule[:non_terminal_index] + replacement.split(" ") + rule[non_terminal_index + 1:]
-        yield from predicates_from_rule_generator(new_rule, predicates, depth)
-
-
-def enumerate_predicates(grammar: Grammar, positive_inputs: List[Dict], negative_inputs: List[Dict]):
-    """
-    enumerate over given grammar, with observational equivalence (Generator)
-    programs are kept in the predictes dictionary, of type Dict[int, Dict[str, Dict[tuple, str]]]
-    key of uppermost dict is depth, key of next dict is lhs of the rule, key of next dict is tuple of results from
-    the evaluation of the predicate on different input (length of tuple is amount of inputs).
-    :param grammar: the grammar
-    :param positive_inputs: inputs on which the LI should be evaluated to True
-    :param negative_inputs: inputs on which the LI should be evaluated to False
-    :return: yields programs, from depth 0 until MAX_DEPTH
-    """
-    inputs = positive_inputs + negative_inputs
-    # Deal with depth = 0
-    predicates = {0: {}}
-    for lhs, rhs_list in grammar.rules.items():
-        predicates[0][lhs] = {}
-        for rhs in rhs_list:
-            pred = ' '.join(rhs.rhs)
-            if is_final(rhs.rhs):
-                evaluation = evaluate_predicate(pred, inputs)
-                if evaluation not in predicates[0][lhs]:
-                    predicates[0][lhs][evaluation] = pred
-                    if lhs == grammar.start_symbol:
-                        yield pred
-
-    for i in range(1, MAX_DEPTH + 1):
-        predicates[i] = {}
-        for lhs, rhs_list in grammar.rules.items():
-            predicates[i][lhs] = {}
-            for rhs in rhs_list:
-                for new_predicate in predicates_from_rule_generator(rhs.rhs, predicates, i):
-                    evaluation = evaluate_predicate(new_predicate, inputs)
-                    if all([evaluation not in predicates[k][lhs] for k in range(i+1)]):
-                        predicates[i][lhs][evaluation] = new_predicate
-
-        for predicate in predicates[i][grammar.start_symbol].values():
-            yield predicate
-
-        positive_predicates = [pred for evaluation, pred in predicates[i][grammar.start_symbol].items()
-                               if len(list(filter(lambda x: not x, evaluation[:len(positive_inputs)]))) == 0]
-
-        for d in range(2, 4):
-            positive_groups = list(combinations(positive_predicates, d))
-            for g in positive_groups:
-                ret = (d - 1) * "( " + f"{g[0]}"
-                for p in g[1:]:
-                    ret += f" and {p} )"
-                yield ret
-
-
-def find_loop_invariant(grammar: Grammar, positive_inputs: List[Dict], negative_inputs: List[Dict]) -> str:
-    for pred in enumerate_predicates(grammar, positive_inputs, negative_inputs):
-        positive_states_results = evaluate_predicate(pred, positive_inputs)
-        negative_states_results = evaluate_predicate(pred, negative_inputs)
-
-        if not None in positive_states_results and not None in negative_states_results:
-            if all(positive_states_results) and not any(negative_states_results):
-                return pred
-
-
-if __name__ == "__main__":
-    grammar_str = "\n".join([
-        "LEXPR -> ( AEXPR RELOP AEXPR ) | ( SEXPR RELOP SEXPR ) | ( LEXPR LOP LEXPR ) | SLFUNC",
-        "SEXPR -> SVAR | SFUNC ",
-        "AEXPR -> AVAR | AEXPR AOP AEXPR | NUM | AFUNC ",
-        "NUM -> 0|1|2|3|4|5",
-        "SVAR -> s1|s2",
-        "AVAR -> i",
-        # "CHAR -> " + chars_str,
-        "RELOP -> == | != | < | <=",
-        "LOP -> and | or",
-        "AOP -> + | - | * ",
-        "AFUNC -> str_index_of ( SEXPR , SEXPR ) | str_len ( SEXPR )",
-        "SLFUNC -> str_prefix_of ( SEXPR , SEXPR ) | str_suffix_of ( SEXPR , SEXPR ) |  str_contains ( SEXPR , SEXPR )",
-        "SFUNC -> str_get_substring ( SEXPR , AEXPR , AEXPR ) | str_char_at_index ( SEXPR , AEXPR ) | str_concat ( SEXPR , SEXPR ) | str_replace ( SEXPR , SEXPR , SEXPR )"
-    ])
-    grammar_obj = Grammar.from_string(grammar_str)
-    positive = [
-        {
-            "s1": "First string",
-            "s2": "Second string",
-            "i": 0
-        },
-        {
-            "s1": "First string",
-            "s2": "Second stringF",
-            "i": 1
-        },
-        {
-            "s1": "First string",
-            "s2": "Second stringFi",
-            "i": 2
-        },
-        {
-            "s1": "First string",
-            "s2": "Second stringFir",
-            "i": 3
-        },
-        {
-            "s1": "First string",
-            "s2": "Second stringFirs",
-            "i": 4
-        },
-        {
-            "s1": "First string",
-            "s2": "Second stringFirst",
-            "i": 5
-        },
-        {
-            "s1": "First string",
-            "s2": "Second stringFirst ",
-            "i": 6
-        },
-        {
-            "s1": "First string",
-            "s2": "Second stringFirst s",
-            "i": 7
-        },
-        {
-            "s1": "First string",
-            "s2": "Second stringFirst st",
-            "i": 8
-        },
-    ]
-    negative = [
-        {
-            "s1": "ab",
-            "s2": "",
-            "i": 2
-        }
-    ]
-    for le in find_loop_invariant(grammar_obj, positive, negative):
-        print(le)
+if __name__ == '__main__':
+    main()
