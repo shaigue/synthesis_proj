@@ -8,7 +8,7 @@ import itertools
 from collections import defaultdict
 from typing import List, Callable, Any, Dict, Tuple, Type
 
-from z3 import Int, String, IntVal, StringVal
+from z3 import Int, String, IntVal, StringVal, Array, IntSort
 
 
 def bottom_up_enumeration_with_observational_equivalence(examples: List[Dict[str, Any]], functions: List[Callable],
@@ -20,13 +20,17 @@ def bottom_up_enumeration_with_observational_equivalence(examples: List[Dict[str
 
         for func in functions:
             for value_vector_list, expr_list in _iter_params(func, typed_value_vector_to_expr):
+                # TODO: Handle IndexError! Can one member of the tuple be None?
                 value_vector = tuple(func(*params) for params in zip(*value_vector_list))
                 t = type(value_vector[0])
 
                 if value_vector not in typed_value_vector_to_expr[t] and \
                         value_vector not in new_typed_value_vector_to_expr[t]:
                     expr = func(*expr_list, to_z3=True)
+                    if t == list:
+                        value_vector = (tuple(val) for val in value_vector)
                     new_typed_value_vector_to_expr[t][value_vector] = expr
+                    # TODO: Do you yield non-boolean expressions here?
                     yield value_vector, expr
 
         if len(new_typed_value_vector_to_expr) == 0:
@@ -69,11 +73,12 @@ def _const_to_z3(constant):
 
 
 def _var_to_z3(name: str, t: Type):
-    # TODO: add support for array types
     if t == int:
         return Int(name)
     if t == str:
         return String(name)
+    if t == list:
+        return Array(name, IntSort(), IntSort())
     raise NotImplementedError(f"type {t} is not supported")
 
 
@@ -93,6 +98,8 @@ def _init_value_vector_to_expr(examples: List[Dict[str, Any]], constants: List):
     for variable in variables:
         value_vector = tuple(example[variable] for example in examples)
         t = type(value_vector[0])
+        if t == list:
+            value_vector = tuple(tuple(example[variable]) for example in examples)
         if value_vector not in typed_value_vector_to_expr[t]:
             typed_value_vector_to_expr[t][value_vector] = _var_to_z3(variable, t)
 

@@ -3,6 +3,7 @@ from typing import Callable, List, Dict, Any, Type
 from z3 import And, BoolRef, Solver, Not, sat, Implies, Int
 
 from src.enumeration import bottom_up_enumeration_with_observational_equivalence
+from config import ARRAY_LEN
 
 
 # TODO: give timeout parameters in case the synthesizer does not find any solution
@@ -52,6 +53,10 @@ def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions
             negative_examples.append(counter_example)
 
 
+def z3_array_to_list(arr, model):
+    return [model.evaluate(arr[i]).as_long() for i in range(ARRAY_LEN)]
+
+
 def _find_counter_example(a: BoolRef, b: BoolRef, var_name_to_type: Dict[str, Type]):
     s = Solver()
     s.add(Not(Implies(a, b)))
@@ -60,11 +65,12 @@ def _find_counter_example(a: BoolRef, b: BoolRef, var_name_to_type: Dict[str, Ty
     if res == sat:
         counter_example = {}
         for var_name, t in var_name_to_type.items():
-            # TODO: add support to arrays
             if t == int:
                 counter_example[var_name] = 0
             elif t == str:
                 counter_example[var_name] = ""
+            elif t == list:
+                counter_example[var_name] = [0] * ARRAY_LEN
             else:
                 assert False, f"Does not support {t}"
 
@@ -72,13 +78,14 @@ def _find_counter_example(a: BoolRef, b: BoolRef, var_name_to_type: Dict[str, Ty
         for model_var in model:
             var_name = str(model_var)
             if var_name in var_name_to_type:
-                # TODO: add support to arrays
                 t = var_name_to_type[var_name]
                 value = model[model_var]
                 if t == int:
                     value = value.as_long()
                 elif t == str:
                     value = value.as_string()
+                elif t == list:
+                    value = z3_array_to_list(value, model)
                 else:
                     assert False, f"Does not support {t}"
 
