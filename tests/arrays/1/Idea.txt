@@ -1,0 +1,5 @@
+2 Arrays, copy from one to the other
+property: sum(l1[:i]) == sum(l2[:i])
+LI: l1[:i] == l2[:i]
+
+TODO: add ranges to forall function

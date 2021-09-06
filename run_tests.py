@@ -1,8 +1,9 @@
 from pathlib import Path
+from datetime import datetime
 
 import config
 from src.test_utils.test_utils import load_positive_examples_and_safety_property
-from src.library import get_int_functions_and_constants, get_string_functions_and_constants
+from src.library import get_int_functions_and_constants, get_string_functions_and_constants, get_array_functions_and_constants
 from src.synthesis import counter_example_synthesis
 
 
@@ -30,6 +31,15 @@ def run_string_tests():
     run_tests(tests_dir, functions, constants)
 
 
+def run_array_tests():
+    tests_dir = config.TESTS_DIR / 'arrays'
+    functions, constants = get_array_functions_and_constants()
+    run_tests(tests_dir, functions, constants)
+
+
 if __name__ == '__main__':
+    print(datetime.now())
     # run_integer_tests()
-    run_string_tests()
+    # run_string_tests()
+    run_array_tests()
+    print(datetime.now())

@@ -1,0 +1,3 @@
+Go over array and find max value into variable m
+property: sum(l[:i]) <= m*ARRAY_LEN
+LI: all(m >= n for n in l[:i])
