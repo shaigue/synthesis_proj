@@ -14,7 +14,10 @@ def arr_eq(l1: list, l2: list, to_z3=False) -> bool:
 
 def arr_select(l: list, index: int, to_z3=False) -> int:
     # Works for z3 arrays as well
-    return l[index]
+    try:
+        return l[index]
+    except IndexError:
+        return None
 
 
 def forall_eq(l: list, num: int, to_z3=False) -> bool:

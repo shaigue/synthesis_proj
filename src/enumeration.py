@@ -22,15 +22,16 @@ def bottom_up_enumeration_with_observational_equivalence(examples: List[Dict[str
             for value_vector_list, expr_list in _iter_params(func, typed_value_vector_to_expr):
                 # TODO: Handle IndexError! Can one member of the tuple be None?
                 value_vector = tuple(func(*params) for params in zip(*value_vector_list))
+                if None in value_vector:
+                    continue
                 t = type(value_vector[0])
 
                 if value_vector not in typed_value_vector_to_expr[t] and \
                         value_vector not in new_typed_value_vector_to_expr[t]:
                     expr = func(*expr_list, to_z3=True)
                     if t == list:
-                        value_vector = (tuple(val) for val in value_vector)
+                        value_vector = tuple(tuple(val) for val in value_vector)
                     new_typed_value_vector_to_expr[t][value_vector] = expr
-                    # TODO: Do you yield non-boolean expressions here?
                     yield value_vector, expr
 
         if len(new_typed_value_vector_to_expr) == 0:
