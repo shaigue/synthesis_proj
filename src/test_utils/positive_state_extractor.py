@@ -4,7 +4,7 @@ Input: a python program as a file with strings / ints / lists and a single while
 Output: list of states that occur at the start of the loop
 """
 import ast
-from _ast import While, Module
+from _ast import While, Module, FunctionDef
 from pathlib import Path
 from typing import Any, List, Dict
 
@@ -25,13 +25,42 @@ class _CollectLoopStatesTransformer(ast.NodeTransformer):
 
     def visit_Module(self, node: Module) -> Any:
         body = [self.visit(subtree) for subtree in node.body]
-        states_declare_stmt = '_states = []'
-        states_declare_subtree = ast.parse(states_declare_stmt).body[0]
-        body.insert(0, states_declare_subtree)
+        # Try except is because we don't know how many args the test function gets
+        collect_states_stmt = """
+_all_states = []
+try:
+    for inp in get_inputs():
+        _all_states += test(*inp)
+except TypeError:
+    for inp in get_inputs():
+        _all_states += test(inp)
+        """
+        collect_states_subtrees = ast.parse(collect_states_stmt).body
+        body += collect_states_subtrees
         return Module(
             body=body,
             type_ignores=node.type_ignores,
         )
+
+    def visit_FunctionDef(self, node: FunctionDef) -> Any:
+        if node.name != "test":
+            return node
+        body = [self.visit(subtree) for subtree in node.body]
+        states_declare_stmt = '_states = []'
+        states_declare_subtree = ast.parse(states_declare_stmt).body[0]
+        body.insert(0, states_declare_subtree)
+        states_return_stmt = 'return _states'
+        states_return_subtree = ast.parse(states_return_stmt).body[0]
+        body.append(states_return_subtree)
+        return FunctionDef(
+            name=node.name,
+            args=node.args,
+            body=body,
+            decorator_list=node.decorator_list,
+            returns=node.returns,
+            type_comment=node.type_comment,
+        )
+
 
 
 def _collect_positive_states_from_ast(program_ast: ast.AST) -> List[Dict[str, Any]]:
@@ -40,7 +69,7 @@ def _collect_positive_states_from_ast(program_ast: ast.AST) -> List[Dict[str, An
     transformed_code = compile(transformed_ast, filename='<string>', mode='exec')
     local_vars = {}
     exec(transformed_code, {}, local_vars)
-    return local_vars['_states']
+    return local_vars['_all_states']
 
 
 def collect_positive_states_from_file(program_file: Path) -> List[Dict[str, Any]]:
