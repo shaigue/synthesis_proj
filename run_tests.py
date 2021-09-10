@@ -1,7 +1,5 @@
 from pathlib import Path
-from datetime import datetime
 from multiprocessing import Process
-import time
 from typing import Callable, List
 
 import config
@@ -23,6 +21,7 @@ def run_test(test_dir: Path, functions: List[Callable], constants: List) -> None
 
 
 def run_tests(tests_dir: Path, functions, constants, timeout: int = 5):
+    # TODO: some tests might randomly fail do to weird z3 stuff, make sure to elegantly capture that
     for test_dir in tests_dir.iterdir():
         if not test_dir.is_dir():
             continue
@@ -53,8 +52,4 @@ def run_array_tests():
 
 
 if __name__ == '__main__':
-    # print(datetime.now())
-    # run_integer_tests()
-    # run_string_tests()
     run_array_tests()
-    # print(datetime.now())
