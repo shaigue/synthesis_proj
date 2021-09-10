@@ -1,7 +1,7 @@
 from typing import Callable, List, Dict, Any, Type
 import z3
 
-from z3 import And, BoolRef, Solver, Not, sat, Implies, Int, FuncInterp, ArrayRef, QuantifierRef, ArithRef
+from z3 import And, BoolRef, Solver, Not, sat, Implies, Int, FuncInterp, ArrayRef, QuantifierRef, ArithRef, ModelRef
 
 from src.enumeration import bottom_up_enumeration_with_observational_equivalence
 from config import ARRAY_LEN
@@ -55,62 +55,64 @@ def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions
             negative_examples.append(counter_example)
 
 
-def z3_array_to_list(arr, model):
-    # print(type(arr))
-    if isinstance(arr, FuncInterp):
-        func_interp_list = arr.as_list()
-        else_value = model.evaluate(func_interp_list[-1])
-        func_interp_dict = {}
-        for entry in func_interp_list[:-1]:
-            func_interp_dict[entry[0]] = model.evaluate(entry[1])
+def _z3_array_to_list(arr, model):
+    ret_val = [arr[i] for i in range(ARRAY_LEN)]
+    ret_val = [model.evaluate(entry) for entry in ret_val]
+    ret_val = [entry.as_long() for entry in ret_val]
+    return ret_val
 
-        ret_val = [func_interp_dict.get(i, else_value) for i in range(ARRAY_LEN)]
-        return ret_val
 
-    elif isinstance(arr, (ArrayRef, QuantifierRef)):
-        ret_val = [arr[i] for i in range(ARRAY_LEN)]
-        ret_val = [model.evaluate(entry) for entry in ret_val]
-        ret_val = [entry.as_long() for entry in ret_val]
-        return ret_val
-    else:
-        assert f"Does not support type {type(arr)}"
+def _has_func_interp(model: ModelRef) -> bool:
+    for variable in model:
+        value = model[variable]
+        if isinstance(value, FuncInterp):
+            return True
+
+    return False
 
 
 def _find_counter_example(a: BoolRef, b: BoolRef, var_name_to_type: Dict[str, Type]):
     s = Solver()
     s.add(Not(Implies(a, b)))
-    res = s.check()
 
-    if res == sat:
-        counter_example = {}
-        for var_name, t in var_name_to_type.items():
-            if t == int:
-                counter_example[var_name] = 0
-            elif t == str:
-                counter_example[var_name] = ""
-            elif t == list:
-                counter_example[var_name] = [0] * ARRAY_LEN
-            else:
-                assert False, f"Does not support {t}"
+    while True:
+        res = s.check()
 
-        model = s.model()
-        for model_var in model:
-            var_name = str(model_var)
-            if var_name in var_name_to_type:
-                t = var_name_to_type[var_name]
-                value = model[model_var]
+        if res == sat:
+            counter_example = {}
+            for var_name, t in var_name_to_type.items():
                 if t == int:
-                    value = value.as_long()
+                    counter_example[var_name] = 0
                 elif t == str:
-                    value = value.as_string()
+                    counter_example[var_name] = ""
                 elif t == list:
-                    value = z3_array_to_list(value, model)
+                    counter_example[var_name] = [0] * ARRAY_LEN
                 else:
                     assert False, f"Does not support {t}"
 
-                counter_example[var_name] = value
+            model = s.model()
+            # TODO: quick fix, but there should be a way better handle this
+            if _has_func_interp(model):
+                continue
 
-        return counter_example
+            for model_var in model:
+                var_name = str(model_var)
+                if var_name in var_name_to_type:
+                    t = var_name_to_type[var_name]
+                    value = model[model_var]
+
+                    if t == int:
+                        value = value.as_long()
+                    elif t == str:
+                        value = value.as_string()
+                    elif t == list:
+                        value = _z3_array_to_list(value, model)
+                    else:
+                        assert False, f"Does not support {t}"
+
+                    counter_example[var_name] = value
+
+            return counter_example
 
 
 def main():

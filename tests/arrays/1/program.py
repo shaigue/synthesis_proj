@@ -1,4 +1,4 @@
-from library.arrays import _store
+from src.library.arrays import _store
 a1 = [5, 3, 6, 2, 7]
 a2 = [1, 5, 8, 4, 2]
 i = 0
