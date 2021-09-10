@@ -1,10 +1,12 @@
 from typing import Callable, List, Dict, Any, Type
+import z3
 
-from z3 import And, BoolRef, Solver, Not, sat, Implies, Int
+from z3 import And, BoolRef, Solver, Not, sat, Implies, Int, FuncInterp, ArrayRef, QuantifierRef, ArithRef
 
 from src.enumeration import bottom_up_enumeration_with_observational_equivalence
 from config import ARRAY_LEN
 
+# z3.set_param('model_compress', False)
 
 # TODO: give timeout parameters in case the synthesizer does not find any solution
 # TODO: maybe for every different set of input (strings, integers, arrays) assign a function, constants
@@ -54,7 +56,24 @@ def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions
 
 
 def z3_array_to_list(arr, model):
-    return [model.evaluate(arr[i]).as_long() for i in range(ARRAY_LEN)]
+    # print(type(arr))
+    if isinstance(arr, FuncInterp):
+        func_interp_list = arr.as_list()
+        else_value = model.evaluate(func_interp_list[-1])
+        func_interp_dict = {}
+        for entry in func_interp_list[:-1]:
+            func_interp_dict[entry[0]] = model.evaluate(entry[1])
+
+        ret_val = [func_interp_dict.get(i, else_value) for i in range(ARRAY_LEN)]
+        return ret_val
+
+    elif isinstance(arr, (ArrayRef, QuantifierRef)):
+        ret_val = [arr[i] for i in range(ARRAY_LEN)]
+        ret_val = [model.evaluate(entry) for entry in ret_val]
+        ret_val = [entry.as_long() for entry in ret_val]
+        return ret_val
+    else:
+        assert f"Does not support type {type(arr)}"
 
 
 def _find_counter_example(a: BoolRef, b: BoolRef, var_name_to_type: Dict[str, Type]):
