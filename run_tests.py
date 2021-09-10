@@ -9,6 +9,8 @@ from src.synthesis import counter_example_synthesis
 
 def run_tests(tests_dir: Path, functions, constants):
     for test_dir in tests_dir.iterdir():
+        if not test_dir.is_dir():
+            continue
         print(f"running test {test_dir}...")
         positive_examples, safety_property = load_positive_examples_and_safety_property(test_dir)
         loop_invariant = counter_example_synthesis(positive_examples, functions, constants,
