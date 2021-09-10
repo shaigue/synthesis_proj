@@ -1,8 +1,21 @@
-from src.library.arrays import _store
+def get_inputs():
+    import random
+    return [[random.randrange(100) for _ in range(5)] for _ in range(5)]
 
-a = [1, 2, 3, 4, 5]
-i = 0
-while i < len(a):
-    # a[i] *= 2
-    a = _store(a, a[i] * 2, i)
-    i += 1
+
+def test(a):
+    from library.arrays import _store
+
+    _states = []
+    i = 0
+    while i < len(a):
+        # a[i] *= 2
+        a = _store(a, a[i] * 2, i)
+        i += 1
+
+    return _states
+
+
+_states = []
+for inp in get_inputs():
+    _states += test(inp)
