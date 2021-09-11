@@ -1,6 +1,8 @@
-from z3 import Strings, Length
+from z3 import String, And, PrefixOf, SuffixOf
 
 
 def get_safety_property():
-    s, s1 = Strings('s s1')
-    return Length(s) < Length(s1)
+    s1 = String('s1')
+    s = String('s')
+    s2 = String('s2')
+    return And(PrefixOf(s1, s), SuffixOf(s2, s))
