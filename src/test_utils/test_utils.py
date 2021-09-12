@@ -6,8 +6,6 @@ from typing import Any, Dict, List
 
 from z3 import BoolRef
 
-from src.test_utils.positive_state_extractor import collect_positive_states_from_file
-
 
 def _load_test_positive_states(test_dir: Path) -> List[Dict[str, Any]]:
     program_file = next(iter(test_dir.glob('*.py')))
