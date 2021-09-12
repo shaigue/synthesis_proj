@@ -43,3 +43,38 @@ def test_1():
         is_expressible=True
     )
 
+
+def test_2():
+    def program(x: int, y: int, z: int):
+        sign = 1 if x + y + z > 0 else -1
+        temp = 0
+
+        if sign == 1:
+            x = abs(x)
+            y = abs(y)
+            z = abs(z)
+
+        else:
+            x = - abs(x)
+            y = - abs(y)
+            z = - abs(z)
+
+        while x != 0 and y != 0 and z != 0:
+            yield locals()
+            temp = (x - sign)
+            x = - y
+            y = - z
+            z = - temp
+            sign = - sign
+
+    x, y, z = Ints('x y z')
+    safety_property = Or(
+        And(x >= 0, y >= 0, z >= 0),
+        And(x <= 0, y <= 0, z <= 0)
+    )
+    return Benchmark(
+        program,
+        safety_property,
+        is_correct=True,
+        is_expressible=True
+    )
