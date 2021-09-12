@@ -62,7 +62,6 @@ except TypeError:
         )
 
 
-
 def _collect_positive_states_from_ast(program_ast: ast.AST) -> List[Dict[str, Any]]:
     transformed_ast = _CollectLoopStatesTransformer().visit(program_ast)
     transformed_ast = ast.fix_missing_locations(transformed_ast)

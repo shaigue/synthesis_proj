@@ -1,4 +1,3 @@
-x = 10
-y = 10
-while x - 10 != y:
-    y = y - 1
+def test(x: int, y: int):
+    while x - 10 != y:
+        y = y - 1
