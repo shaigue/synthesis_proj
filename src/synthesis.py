@@ -3,9 +3,11 @@ import z3
 
 from z3 import And, BoolRef, Solver, Not, sat, Implies, Int, FuncInterp, ModelRef, unsat, unknown
 
+import config
 from src.enumeration import bottom_up_enumeration_with_observational_equivalence, var_to_z3
 from config import ARRAY_LEN
 z3.set_param('model.compact', False)
+
 
 # TODO: try to minimize when doing conjuction of the formulas, to avoid redundant ones
 # TODO: give timeout parameters in case the synthesizer does not find any solution
@@ -65,15 +67,33 @@ def _check_positive_examples_satisfy_property(positive_examples: List[Dict[str, 
     return True
 
 
+class SynthesisResult:
+    def __init__(self, success: bool, bad_property: bool, timeout: bool, value=None):
+        assert value is not None or not success, "if success, result must be provided."
+        self.success = success
+        self.bad_property = bad_property
+        self.timeout = timeout
+        self.value = value
+
+    @classmethod
+    def timeout_cons(cls):
+        return cls(False, False, True)
+
+    @classmethod
+    def bad_property_cons(cls):
+        return cls(False, True, False)
+
+    @classmethod
+    def success_cons(cls, result: BoolRef):
+        return cls(True, False, False, result)
+
+
 def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions: List[Callable], constants: List,
-                              property_to_prove: BoolRef, max_counter_examples=20):
-    # TODO: move max_counter_examples to config file or something
+                              property_to_prove: BoolRef,
+                              max_counter_examples=config.MAX_COUNTER_EXAMPLES_ROUNDS) -> SynthesisResult:
 
     if not _check_positive_examples_satisfy_property(positive_examples, property_to_prove):
-        # TODO: make a special return value type for this
-        # TODO: give a special output message if this occurs, i.e. there is clearly no loop invariant
-
-        return None
+        return SynthesisResult.bad_property_cons()
 
     var_name_to_type = {name: type(value) for name, value in positive_examples[0].items()}
     negative_examples = []
@@ -84,7 +104,9 @@ def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions
         if counter_example.counter_example_found:
             negative_examples.append(counter_example.example)
         else:
-            return assumption
+            return SynthesisResult.success_cons(assumption)
+
+    return SynthesisResult.timeout_cons()
 
 
 def _z3_array_to_list(arr, model):
@@ -218,17 +240,3 @@ def _find_counter_example(a: BoolRef, b: BoolRef, var_name_to_type: Dict[str, Ty
             counter_example[var_name] = value
 
     return _CounterExampleResult.counter_example(example=counter_example)
-
-
-def main():
-    from src.library import get_int_functions_and_constants
-    positive_examples = [{'x': 10, 'y': 1}, {'x': 20, 'y': 13}, {'x': 12, 'y': 2}]
-    # negative_examples = [{'x': 1, 'y': -2}, {'x': -1, 'y': -2}, {'x': -1, 'y': 3}]
-    safety_property = And(Int('x') > 2, Int('y') > 0, Int('x') > Int('y'))
-    functions, constants = get_int_functions_and_constants()
-    expr = counter_example_synthesis(positive_examples, functions, constants, safety_property)
-    print(expr)
-
-
-if __name__ == '__main__':
-    main()
