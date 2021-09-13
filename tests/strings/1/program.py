@@ -1,12 +1,12 @@
 def get_inputs():
     import random
     import string
-    from config import _NUM_INPUTS
+    from config import N_INPUTS
 
     str_len = random.randrange(2, 100)
     letters = string.ascii_letters
     return [(''.join(random.choice(letters) for _ in range(str_len)), random.randrange(1, 100))
-            for _ in range(_NUM_INPUTS)]
+            for _ in range(N_INPUTS)]
 
 
 def test(s, x):

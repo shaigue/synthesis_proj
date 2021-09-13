@@ -1,5 +1,0 @@
-{
-    "property": "(y < x + 2)",
-    "holds": true,
-    "exists_loop_invariant": true
-}

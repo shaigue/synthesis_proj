@@ -1,15 +1,15 @@
 def get_inputs():
     import random
     import string
-    from config import _NUM_INPUTS
+    from config import N_INPUTS
 
     str_len = random.randrange(2, 10)
     letters = string.ascii_letters
-    s1_list = [''.join(random.choice(letters) for _ in range(str_len)) for _ in range(_NUM_INPUTS)]
-    s2_list = [''.join(random.choice(letters) for _ in range(str_len)) for _ in range(_NUM_INPUTS)]
+    s1_list = [''.join(random.choice(letters) for _ in range(str_len)) for _ in range(N_INPUTS)]
+    s2_list = [''.join(random.choice(letters) for _ in range(str_len)) for _ in range(N_INPUTS)]
     # s_list = s1_list.copy()
     s_list = [s1 + ''.join(random.choice(letters) for _ in range(str_len)) for s1 in s1_list]
-    t_list = [random.randrange(10) for _ in range(_NUM_INPUTS)]
+    t_list = [random.randrange(10) for _ in range(N_INPUTS)]
     return list(zip(s_list, s1_list, s2_list, t_list))
 
 

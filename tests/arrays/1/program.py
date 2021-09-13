@@ -1,8 +1,8 @@
 def get_inputs():
     import random
-    from config import _NUM_INPUTS
+    from config import N_INPUTS
     return [([random.randrange(-100, 100) for _ in range(5)], [random.randrange(-100, 100) for _ in range(5)])
-            for _ in range(_NUM_INPUTS)]
+            for _ in range(N_INPUTS)]
 
 
 def test(a1, a2):

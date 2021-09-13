@@ -1,5 +1,0 @@
-{
-    "property": "(z < y)",
-    "holds": true,
-    "exists_loop_invariant": true
-}

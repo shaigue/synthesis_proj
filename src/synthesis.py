@@ -1,9 +1,9 @@
 from typing import Callable, List, Dict, Any, Type
 import z3
 
-from z3 import And, BoolRef, Solver, Not, sat, Implies, Int, FuncInterp, ModelRef, unsat
+from z3 import And, BoolRef, Solver, Not, sat, Implies, Int, FuncInterp, ModelRef, unsat, unknown
 
-from src.enumeration import bottom_up_enumeration_with_observational_equivalence
+from src.enumeration import bottom_up_enumeration_with_observational_equivalence, var_to_z3
 from config import ARRAY_LEN
 z3.set_param('model.compact', False)
 
@@ -38,10 +38,42 @@ def find_satisfying_expr(positive_examples: List[Dict[str, Any]], negative_examp
                 return expr
 
 
+def _check_positive_examples_satisfy_property(positive_examples: List[Dict[str, Any]],
+                                              property_to_prove: BoolRef) -> bool:
+    """
+    If one of the positive examples does not agree with the property that we want to prove, then we
+    can't possibly find a formula that agrees on the positive examples and implies the property. So we do this check
+    to make sure we are not chasing our own tails
+    """
+    for example in positive_examples:
+        constraints = [property_to_prove]
+
+        for variable, value in example.items():
+            variable_z3 = var_to_z3(variable, type(value))
+            # TODO: make sure that this works for arrays and strings
+            constraint = variable_z3 == value
+            constraints.append(constraint)
+
+        property_with_constraints = And(constraints)
+        s = Solver()
+        s.add(property_with_constraints)
+        res = s.check()
+        assert res != unknown, "cannot deal with unknown check result."
+        if res == unsat:
+            return False
+
+    return True
+
+
 def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions: List[Callable], constants: List,
                               property_to_prove: BoolRef, max_counter_examples=20):
-    # TODO: what if one of the positive examples does not satisfy the the property to prove?
-    #  if so, we can be certain that we don't have any loop invariant. add this check
+    # TODO: move max_counter_examples to config file or something
+
+    if not _check_positive_examples_satisfy_property(positive_examples, property_to_prove):
+        # TODO: make a special return value type for this
+        # TODO: give a special output message if this occurs, i.e. there is clearly no loop invariant
+
+        return None
 
     var_name_to_type = {name: type(value) for name, value in positive_examples[0].items()}
     negative_examples = []
@@ -144,6 +176,10 @@ def _find_counter_example(a: BoolRef, b: BoolRef, var_name_to_type: Dict[str, Ty
     s.add(Not(Implies(a, b)))
     res = s.check()
 
+    # TODO: deal with unknown
+    if res == unknown:
+        raise RuntimeError(f"cannot deal with unknown")
+
     if res == unsat:
         return _CounterExampleResult.no_counter_example()
 
@@ -170,6 +206,7 @@ def _find_counter_example(a: BoolRef, b: BoolRef, var_name_to_type: Dict[str, Ty
             value = model[model_var]
 
             if t == int:
+                s_val = value.as_string()
                 value = value.as_long()
             elif t == str:
                 value = value.as_string()
