@@ -7,7 +7,7 @@ from src.enumeration import bottom_up_enumeration_with_observational_equivalence
 from config import ARRAY_LEN
 z3.set_param('model.compact', False)
 
-
+# TODO: try to minimize when doing conjuction of the formulas, to avoid redundant ones
 # TODO: give timeout parameters in case the synthesizer does not find any solution
 # TODO: maybe for every different set of input (strings, integers, arrays) assign a function, constants
 def find_satisfying_expr(positive_examples: List[Dict[str, Any]], negative_examples: List[Dict[str, Any]],

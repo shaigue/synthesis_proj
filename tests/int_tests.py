@@ -26,8 +26,6 @@ def test_0():
 
 def test_1():
     def program(x: int):
-        if x < 0:
-            x = - x
         y = 0
         z = 0
         while x > 0:
@@ -36,13 +34,17 @@ def test_1():
             z += y
             x -= 1
 
+    def input_condition(x: int):
+        return x > 0
+
     x, y, z = Ints('x y z')
     safety_property = Or(y == 0, And(y > x, z > x))
     return Benchmark(
         program,
         safety_property,
         is_correct=True,
-        is_expressible=True
+        is_expressible=True,
+        input_condition=input_condition
     )
 
 
@@ -103,14 +105,15 @@ def test_3():
 def test_4():
     def program(x: int, y: int):
         # calculates v = x * y
-        x = abs(x)
-        y = abs(y)
         v = 0
         i = 0
         while i < y:
             yield locals()
             i += 1
             v += x
+
+    def input_condition(x: int, y: int):
+        return x >= 0 and y >= 0
 
     x, y, v = Ints('x y v')
     safety_property = v <= x * y
@@ -119,7 +122,8 @@ def test_4():
         program,
         safety_property,
         is_correct=True,
-        is_expressible=False
+        is_expressible=False,
+        input_condition=input_condition
     )
 
 
