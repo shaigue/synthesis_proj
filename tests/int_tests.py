@@ -2,6 +2,8 @@ from z3 import Ints, Or, And
 
 from src.test_utils.benchmark import Benchmark
 
+# TODO: maybe infer automatically what functions and constants to use based on the type of variables that are received?
+
 
 def test_0():
     def program(x: int, y: int):
@@ -77,4 +79,74 @@ def test_2():
         safety_property,
         is_correct=True,
         is_expressible=True
+    )
+
+
+def test_3():
+    def program(x: int, y: int):
+        i = min(x, y)
+        m = max(x, y)
+        while i < 2 * m:
+            yield locals()
+            i += 1
+
+    x, y, i, m = Ints('x y i m')
+    safety_property = Or(i <= 2 * x, i <= 2 * y)
+    return Benchmark(
+        program,
+        safety_property,
+        is_correct=True,
+        is_expressible=True
+    )
+
+
+def test_4():
+    def program(x: int, y: int):
+        # calculates v = x * y
+        x = abs(x)
+        y = abs(y)
+        v = 0
+        i = 0
+        while i < y:
+            yield locals()
+            i += 1
+            v += x
+
+    x, y, v = Ints('x y v')
+    safety_property = v <= x * y
+
+    return Benchmark(
+        program,
+        safety_property,
+        is_correct=True,
+        is_expressible=False
+    )
+
+
+def test_5():
+    # TODO: test where the property is incorrect
+    def program(x: int, y: int):
+        # counts the number of odd numbers between 2 numbers, but it has a bug in it and it counts every number twice
+        c = 0
+        i = min(x, y)
+        m = max(x, y)
+        while i <= m:
+            yield locals()
+            if i % 2 == 1:
+                c += 1
+                c += 1  # BUG!!!
+            i += 1
+
+    x, y, c = Ints('x y c')
+    safety_property = Or(
+        # if x and y are different then there is at least 1 odd number between them, but it cannot be that all are odd
+        And(x > y, c < x - y + 1),
+        And(x < y, c < y - x + 1),
+        And(x == y, c >= 0, c <= 1)
+    )
+    return Benchmark(
+        program,
+        safety_property,
+        is_correct=False,
+        is_expressible=False
     )

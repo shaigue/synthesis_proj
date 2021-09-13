@@ -73,7 +73,7 @@ def _const_to_z3(constant):
     raise NotImplementedError(f"type {t} is not supported")
 
 
-def _var_to_z3(name: str, t: Type):
+def var_to_z3(name: str, t: Type):
     if t == int:
         return Int(name)
     if t == str:
@@ -102,7 +102,7 @@ def _init_value_vector_to_expr(examples: List[Dict[str, Any]], constants: List):
         if t == list:
             value_vector = tuple(tuple(example[variable]) for example in examples)
         if value_vector not in typed_value_vector_to_expr[t]:
-            typed_value_vector_to_expr[t][value_vector] = _var_to_z3(variable, t)
+            typed_value_vector_to_expr[t][value_vector] = var_to_z3(variable, t)
 
     return typed_value_vector_to_expr
 

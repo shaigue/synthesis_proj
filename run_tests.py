@@ -1,15 +1,14 @@
-from pathlib import Path
-from multiprocessing import Process
 from threading import Thread
 from typing import Callable, List
 
 import config
 from src.test_utils.benchmark import Benchmark
-from src.test_utils.test_utils import load_positive_examples_and_safety_property
 from src.library import get_int_functions_and_constants, get_string_functions_and_constants, get_array_functions_and_constants
 from src.synthesis import counter_example_synthesis
 
 
+# TODO: be able to write to output the name of the test
+# TODO: take into account in the report the fact that a loop invariant might not be expressible, or incorrect
 def run_test(test: Benchmark, functions: List[Callable], constants: List) -> None:
     print(f"running test {test}...")
     positive_examples = test.generate_positive_states(config.N_INPUTS)
@@ -53,6 +52,13 @@ def run_array_tests():
     run_tests(tests_dir, functions, constants)
 
 
+def _test():
+    from src.library import get_int_functions_and_constants
+    from tests.int_tests import test_5
+    functions, constants = get_int_functions_and_constants()
+    run_test(test_5(), functions, constants)
+    # run_integer_tests()
+
+
 if __name__ == '__main__':
-    run_integer_tests()
-    # run_array_tests()
+    _test()
