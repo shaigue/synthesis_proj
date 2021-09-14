@@ -59,9 +59,3 @@ def forall_lt(l: list, num: int, array_end: int = ARRAY_LEN, to_z3=False) -> boo
     else:
         # Every K is less than 0 or greater than a negative number
         return True
-
-
-def _store(l: list, num: int, index: int):
-    new = l.copy()
-    new[index] = num
-    return new

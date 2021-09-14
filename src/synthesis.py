@@ -1,9 +1,10 @@
-from typing import Callable, List, Dict, Any, Type
+from typing import Callable, List, Dict, Any, Type, Union
 import z3
 
-from z3 import And, BoolRef, Solver, Not, sat, Implies, Int, FuncInterp, ModelRef, unsat, unknown
+from z3 import And, BoolRef, Solver, Not, sat, Implies, Int, FuncInterp, ModelRef, unsat, unknown, Lambda, If
 
 import config
+from src.array_utils import get_z3_int_array
 from src.enumeration import bottom_up_enumeration_with_observational_equivalence, var_to_z3
 from config import ARRAY_LEN
 z3.set_param('model.compact', False)
@@ -41,6 +42,15 @@ def find_satisfying_expr(positive_examples: List[Dict[str, Any]], negative_examp
                 return expr
 
 
+def z3_eq(z3_var, value) -> BoolRef:
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        a = get_z3_int_array('a')
+        
+
 def _check_positive_examples_satisfy_property(positive_examples: List[Dict[str, Any]],
                                               property_to_prove: BoolRef) -> bool:
     """
@@ -54,7 +64,7 @@ def _check_positive_examples_satisfy_property(positive_examples: List[Dict[str, 
         for variable, value in example.items():
             variable_z3 = var_to_z3(variable, type(value))
             # TODO: make sure that this works for arrays and strings
-            constraint = variable_z3 == value
+            constraint = z3_eq(variable_z3, value)
             constraints.append(constraint)
 
         property_with_constraints = And(constraints)
