@@ -2,8 +2,6 @@ from z3 import Ints, Or, And
 
 from src.test_utils.benchmark import Benchmark
 
-# TODO: maybe infer automatically what functions and constants to use based on the type of variables that are received?
-
 
 def test_0():
     def program(x: int, y: int):
@@ -128,7 +126,6 @@ def test_4():
 
 
 def test_5():
-    # TODO: test where the property is incorrect
     def program(x: int, y: int):
         # counts the number of odd numbers between 2 numbers, but it has a bug in it and it counts every number twice
         c = 0

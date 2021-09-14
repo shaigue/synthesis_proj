@@ -30,8 +30,8 @@ def run_tests(tests_module):
 
 
 def _test():
-    from tests.str_tests import test_0, test_1, test_2, test_3, test_4
-    run_test(test_3())
+    from tests.str_tests import test_0, test_1, test_2, test_3, test_4, test_5
+    run_test(test_5())
     # run_tests(int_tests)
 
 

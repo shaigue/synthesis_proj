@@ -9,6 +9,7 @@ from config import ARRAY_LEN
 z3.set_param('model.compact', False)
 
 
+# TODO: add timeout based on time, and not on the number of counter examples
 # TODO: try to minimize when doing conjuction of the formulas, to avoid redundant ones
 # TODO: give timeout parameters in case the synthesizer does not find any solution
 # TODO: maybe for every different set of input (strings, integers, arrays) assign a function, constants

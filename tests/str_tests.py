@@ -1,5 +1,6 @@
-# TODO: add an extra test
-from z3 import String, Int, Length, Strings, And, PrefixOf, SuffixOf, Or, IndexOf
+import random
+
+from z3 import String, Int, Length, Strings, And, PrefixOf, SuffixOf, Or, IndexOf, Contains, Concat, Not
 
 from src.test_utils.benchmark import Benchmark
 
@@ -57,10 +58,10 @@ def test_1():
 
 
 def test_2():
-    # TODO: test - this trows bad property
     def program(s: str, s1: str, s2: str, t: int):
         i = 0
         j = 0
+        s = s1 + s
         while i < t and j < t:
             yield locals()
             if i == j:
@@ -135,3 +136,37 @@ def test_4():
     )
 
 
+def test_5():
+    def program(s: str):
+        i = random.randrange(len(s))
+        s1 = s[:i]
+        s2 = s[i:]
+        j = 0
+        c = ({'A', 'B', 'C'} - {s[0], s[-1]}).pop()
+
+        while j < i ** 2:
+            yield locals()
+            if j % 2 == 1:
+                s1 = c + s1
+            else:
+                s2 = s2 + c
+            j += 1
+
+    def input_condition(s: str):
+        return len(s) > 2
+
+    s, s1, s2 = Strings('s s1 s2')
+    cat = Concat(s1, s2)
+    safety_property = And(
+        Contains(cat, s),
+        Not(Contains(s1, s)),
+        Not(Contains(s2, s))
+    )
+
+    return Benchmark(
+        program,
+        safety_property,
+        is_correct=True,
+        is_expressible=True,
+        input_condition=input_condition
+    )
