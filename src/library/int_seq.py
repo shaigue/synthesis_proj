@@ -1,11 +1,8 @@
 from z3 import Int, ForAll, Or, If, And, FreshInt
 
-from config import ARRAY_LEN
-
 
 def get_constants():
-    # We don't want to support array constants I think.
-    return [ARRAY_LEN]
+    return []
 
 
 def arr_eq(l1: list, l2: list, to_z3=False) -> bool:
@@ -13,11 +10,8 @@ def arr_eq(l1: list, l2: list, to_z3=False) -> bool:
 
 
 def arr_select(l: list, index: int, to_z3=False) -> int:
-    # Works for z3 arrays as well
-    try:
-        return l[index]
-    except IndexError:
-        return None
+    # TODO: make sure to deal with index errors
+    return l[index]
 
 
 def forall_eq(l: list, num: int, array_end: int, to_z3=False) -> bool:
@@ -46,11 +40,11 @@ def forall_gt(l: list, num: int, to_z3=False) -> bool:
     # TODO: Not in use for now, if needed, add array_end parameter
     if to_z3:
         k = FreshInt()
-        return ForAll(k, Or(l[k] > num, k < 0, ARRAY_LEN <= k))
+        return ForAll(k, Or(l[k] > num, k < 0))
     return all(x > num for x in l)
 
 
-def forall_lt(l: list, num: int, array_end: int = ARRAY_LEN, to_z3=False) -> bool:
+def forall_lt(l: list, num: int, array_end: int, to_z3=False) -> bool:
     if to_z3:
         k = FreshInt()
         return ForAll(k, Or(l[k] <= num, k < 0, array_end <= k))

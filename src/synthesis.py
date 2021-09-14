@@ -1,10 +1,10 @@
-from typing import Callable, List, Dict, Any, Type, Union
+from typing import Callable, List, Dict, Any, Type, Union, Tuple, Optional
 import z3
 
-from z3 import And, BoolRef, Solver, Not, sat, Implies, Int, FuncInterp, ModelRef, unsat, unknown, Lambda, If
+from z3 import And, BoolRef, Solver, Not, sat, Implies, Int, FuncInterp, ModelRef, unsat, unknown, Lambda, If, Length
 
 import config
-from src.array_utils import get_z3_int_array
+from src.int_seq_utils import IntSeq
 from src.enumeration import bottom_up_enumeration_with_observational_equivalence, var_to_z3
 from config import ARRAY_LEN
 z3.set_param('model.compact', False)
@@ -43,16 +43,18 @@ def find_satisfying_expr(positive_examples: List[Dict[str, Any]], negative_examp
 
 
 def z3_eq(z3_var, value) -> BoolRef:
-    if isinstance(value, int):
-        return value
-    if isinstance(value, str):
-        return value
     if isinstance(value, list):
-        a = get_z3_int_array('a')
-        
+        constraints = [Length(z3_var) == len(value)]
+        for i in range(len(value)):
+            constraint = z3_var[i] == value[i]
+            constraints.append(constraint)
+        return And(constraints)
+
+    return z3_var == value
+
 
 def _check_positive_examples_satisfy_property(positive_examples: List[Dict[str, Any]],
-                                              property_to_prove: BoolRef) -> bool:
+                                              property_to_prove: BoolRef) -> Tuple[bool, Optional[Dict[str, Any]]]:
     """
     If one of the positive examples does not agree with the property that we want to prove, then we
     can't possibly find a formula that agrees on the positive examples and implies the property. So we do this check
@@ -73,9 +75,9 @@ def _check_positive_examples_satisfy_property(positive_examples: List[Dict[str, 
         res = s.check()
         assert res != unknown, "cannot deal with unknown check result."
         if res == unsat:
-            return False
+            return False, example
 
-    return True
+    return True, None
 
 
 class SynthesisResult:
@@ -91,8 +93,9 @@ class SynthesisResult:
         return cls(False, False, True)
 
     @classmethod
-    def bad_property_cons(cls):
-        return cls(False, True, False)
+    def bad_property_cons(cls, bad_example):
+        # TODO: return also the bad example that does not satisfy the constraint
+        return cls(False, True, False, bad_example)
 
     @classmethod
     def success_cons(cls, result: BoolRef):
@@ -103,8 +106,9 @@ def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions
                               property_to_prove: BoolRef,
                               max_counter_examples=config.MAX_COUNTER_EXAMPLES_ROUNDS) -> SynthesisResult:
 
-    if not _check_positive_examples_satisfy_property(positive_examples, property_to_prove):
-        return SynthesisResult.bad_property_cons()
+    all_examples_good, bad_example = _check_positive_examples_satisfy_property(positive_examples, property_to_prove)
+    if not all_examples_good:
+        return SynthesisResult.bad_property_cons(bad_example)
 
     var_name_to_type = {name: type(value) for name, value in positive_examples[0].items()}
     negative_examples = []

@@ -3,7 +3,7 @@ This module contains the available functions that the synthesizer can use to for
 The loop invariant.
 """
 from typing import List, Dict, Any
-from . import booleans, strings, integers, arrays
+from . import booleans, strings, integers, int_seq
 import z3
 
 
@@ -36,8 +36,8 @@ def get_string_functions_and_constants():
 
 def get_array_functions_and_constants():
     int_funcs, int_consts = get_int_functions_and_constants()
-    functions = int_funcs + _get_module_functions(arrays)
-    constants = int_consts + arrays.get_constants()
+    functions = int_funcs + _get_module_functions(int_seq)
+    constants = int_consts + int_seq.get_constants()
     return functions, constants
 
 

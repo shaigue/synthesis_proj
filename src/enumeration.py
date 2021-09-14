@@ -10,6 +10,8 @@ from typing import List, Callable, Any, Dict, Tuple, Type
 
 from z3 import Int, String, IntVal, StringVal, Array, IntSort
 
+from src.int_seq_utils import IntSeq
+
 
 def bottom_up_enumeration_with_observational_equivalence(examples: List[Dict[str, Any]], functions: List[Callable],
                                                          constants: List[Any]):
@@ -79,7 +81,7 @@ def var_to_z3(name: str, t: Type):
     if t == str:
         return String(name)
     if t == list:
-        return Array(name, IntSort(), IntSort())
+        return IntSeq(name)
     raise NotImplementedError(f"type {t} is not supported")
 
 

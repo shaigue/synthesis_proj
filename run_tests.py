@@ -2,7 +2,7 @@ import config
 from src.test_utils.benchmark import Benchmark
 from src.library import get_functions_and_constants
 from src.synthesis import counter_example_synthesis
-from tests import int_tests, str_tests, arr_tests
+from tests import int_tests, str_tests, int_seq_tests
 
 
 # TODO: take into account in the report the fact that a loop invariant might not be expressible, or incorrect
@@ -15,7 +15,7 @@ def run_test(test: Benchmark) -> None:
     if result.timeout:
         print("***timed-out***")
     elif result.bad_property:
-        print("***bad property***")
+        print(f"***bad property: {test.safety_property} bad_example: {result.value}***")
     else:
         print(f"***loop invariant found:***\n{result.value}")
 
@@ -30,7 +30,7 @@ def run_tests(tests_module):
 
 
 def _test():
-    from tests.arr_tests import test_0
+    from tests.int_seq_tests import test_0
     run_test(test_0())
 
     # run_tests(int_tests)

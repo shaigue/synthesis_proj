@@ -11,6 +11,7 @@ if res == sat:
         # print(d)
         z = m[d]
         v1 = z[1]
+        b = v1 > 1
+        b1 = m.evaluate(b)
         v2 = m.evaluate(v1)
         print(v1)
-    # print(s.model())
