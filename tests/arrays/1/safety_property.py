@@ -1,7 +1,7 @@
 from z3 import Array, IntSort, Int, Function, And, ForAll, Implies, Sum, If
 from config import ARRAY_LEN
 
-
+# TODO: also here, if the array is of unknown size then we cannot sum over it
 def get_safety_property():
     i = Int('i')
     a1 = Array('a1', IntSort(), IntSort())

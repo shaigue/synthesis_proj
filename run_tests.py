@@ -30,10 +30,11 @@ def run_tests(tests_module):
 
 
 def _test():
-    from tests.int_seq_tests import test_0
-    run_test(test_0())
-
-    # run_tests(int_tests)
+    # from tests.int_seq_tests import test_0, test_1, test_2, test_3
+    # run_test(test_2())
+    #
+    from tests.str_tests import test_0, test_1, test_2, test_3, test_4, test_5
+    run_test(test_5())
 
 
 if __name__ == '__main__':

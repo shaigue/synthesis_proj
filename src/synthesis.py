@@ -45,6 +45,7 @@ def find_satisfying_expr(positive_examples: List[Dict[str, Any]], negative_examp
 def z3_eq(z3_var, value) -> BoolRef:
     if isinstance(value, list):
         constraints = [Length(z3_var) == len(value)]
+        # constraints = []
         for i in range(len(value)):
             constraint = z3_var[i] == value[i]
             constraints.append(constraint)
@@ -131,7 +132,7 @@ def _z3_array_to_list(arr, model):
         return ret_val
 
     ret_val = [arr[i] for i in range(ARRAY_LEN)]
-    ret_val = [model.evaluate(entry) for entry in ret_val]
+    ret_val = [model.eval(entry, model_completion=True) for entry in ret_val]
     ret_val = [entry.as_long() for entry in ret_val]
     return ret_val
 
@@ -241,6 +242,7 @@ def _find_counter_example(a: BoolRef, b: BoolRef, var_name_to_type: Dict[str, Ty
         if var_name in var_name_to_type:
             t = var_name_to_type[var_name]
             value = model[model_var]
+
 
             if t == int:
                 s_val = value.as_string()

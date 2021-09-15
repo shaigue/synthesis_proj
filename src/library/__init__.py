@@ -22,7 +22,7 @@ def get_bool_functions():
 
 
 def get_int_functions_and_constants():
-    functions = get_bool_functions() + _get_module_functions(integers)
+    functions = _get_module_functions(integers) + get_bool_functions()
     constants = integers.get_constants()
     return functions, constants
 

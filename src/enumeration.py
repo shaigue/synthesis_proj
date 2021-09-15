@@ -8,7 +8,7 @@ import itertools
 from collections import defaultdict
 from typing import List, Callable, Any, Dict, Tuple, Type
 
-from z3 import Int, String, IntVal, StringVal, Array, IntSort
+from z3 import Int, String, IntVal, StringVal, Array, IntSort, Z3Exception
 
 from src.int_seq_utils import IntSeq
 
@@ -23,9 +23,13 @@ def bottom_up_enumeration_with_observational_equivalence(examples: List[Dict[str
         for func in functions:
             for value_vector_list, expr_list in _iter_params(func, typed_value_vector_to_expr):
                 # TODO: Handle IndexError! Can one member of the tuple be None?
-                value_vector = tuple(func(*params) for params in zip(*value_vector_list))
-                if None in value_vector:
+                try:
+                    value_vector = tuple(func(*params) for params in zip(*value_vector_list))
+                except IndexError:
                     continue
+                except Z3Exception as e:
+                    print(e)
+
                 t = type(value_vector[0])
 
                 if value_vector not in typed_value_vector_to_expr[t] and \
