@@ -3,6 +3,7 @@ from inspect import signature
 from typing import List, Callable, Union, Dict, Type
 
 # random.seed(42)
+# TODO: add ability when running tests to add limitations on the inputs, maybe using preconditions?
 MIN_ARR_LEN = 0
 MAX_ARR_LEN = 10
 MIN_STR_LEN = 0
@@ -44,19 +45,22 @@ def _get_random_param(t: Type):
     assert False, f"type {t} is not supported."
 
 
-def generate_inputs_for_program(program: Callable) -> Dict[str, Union[int, str, List[int]]]:
+def generate_inputs_for_program(program: Callable,
+                                input_condition: Callable[..., bool] = None) -> Dict[str, Union[int, str, List[int]]]:
     """
     Assumes that program has type annotations for parameters.
 
-    returns: a mapping from input parameter to its value.
+    returns: a dictionary mapping from input parameter to its value, satisfying input_condition
     """
     sig = signature(program)
-    params = {}
-    for param_name, param_data in sig.parameters.items():
-        t = param_data.annotation
-        param_value = _get_random_param(t)
-        params[param_name] = param_value
-    return params
+    while True:
+        params = {}
+        for param_name, param_data in sig.parameters.items():
+            t = param_data.annotation
+            param_value = _get_random_param(t)
+            params[param_name] = param_value
+        if input_condition is None or input_condition(**params):
+            return params
 
 
 def _example():

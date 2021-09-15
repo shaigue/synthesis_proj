@@ -37,6 +37,11 @@ def str_contains(s: str, substr: str, to_z3=False) -> bool:
     return substr in s
 
 
+def str_concat(s1: str, s2: str, to_z3=False) -> str:
+    if to_z3:
+        return Concat(s1, s2)
+    return s1 + s2
+
 # def str_get_substr(s: str, start_index: int, length: int, to_z3=False) -> str:
 #     # TODO: this might throw an exception for different values of parameters,
 #     #  so make sure to deal with those in the enumeration procedure
@@ -45,11 +50,11 @@ def str_contains(s: str, substr: str, to_z3=False) -> bool:
 #     return s[start_index:start_index+length]
 
 
-def str_index_of(s: str, substr: str, to_z3=False) -> int:
-    # TODO: what to do with return value when it is not a substring? what should we do?
-    if to_z3:
-        return IndexOf(s, substr)
-    return s.find(substr)
+# def str_index_of(s: str, substr: str, to_z3=False) -> int:
+#     # TODO: what to do with return value when it is not a substring? what should we do?
+#     if to_z3:
+#         return IndexOf(s, substr)
+#     return s.find(substr)
 
 
 # TODO: I think that this function is redundant, since it's functionality is contained in
@@ -59,12 +64,6 @@ def str_index_of(s: str, substr: str, to_z3=False) -> int:
 #     if to_z3:
 #         return SubString(s, index, 1)
 #     return s[index]
-
-
-# def str_concat(s1: str, s2: str, to_z3=False) -> str:
-#     if to_z3:
-#         return Concat(s1, s2)
-#     return s1 + s2
 
 
 # def str_replace(s: str, old: str, new: str, to_z3=False) -> str:

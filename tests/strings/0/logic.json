@@ -1,5 +1,0 @@
-{
-    "property": "str_len(s) <= x",
-    "holds": true,
-    "exists_loop_invariant": true
-}
