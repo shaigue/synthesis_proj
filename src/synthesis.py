@@ -25,6 +25,7 @@ def find_satisfying_expr(positive_examples: List[Dict[str, Any]], negative_examp
 
     for value_vector, expr in bottom_up_enumeration_with_observational_equivalence(examples, functions, constants):
         if isinstance(value_vector[0], bool) and all(value_vector[i] for i in range(n_positive)):
+            # print("*", expr, "*")
             negative_cover = {i for i in range(n_negative) if not value_vector[n_positive + i]}
             other_negative_covers = (negative_cover0 for _, negative_cover0 in expr_negative_cover_pairs)
 
@@ -113,9 +114,11 @@ def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions
 
     var_name_to_type = {name: type(value) for name, value in positive_examples[0].items()}
     negative_examples = []
-
     for counter_example_i in range(max_counter_examples):
         assumption = find_satisfying_expr(positive_examples, negative_examples, functions, constants)
+        if assumption is None:
+            return SynthesisResult.timeout_cons()
+        # print("Assumption: ", assumption)
         counter_example = _find_counter_example(assumption, property_to_prove, var_name_to_type)
         if counter_example.counter_example_found:
             negative_examples.append(counter_example.example)

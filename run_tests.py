@@ -2,7 +2,8 @@ import config
 from src.test_utils.benchmark import Benchmark
 from src.library import get_functions_and_constants
 from src.synthesis import counter_example_synthesis
-from tests import int_tests, str_tests, int_seq_tests
+from benchmarks import int_tests, str_tests, int_seq_tests
+from datetime import datetime
 
 
 # TODO: take into account in the report the fact that a loop invariant might not be expressible, or incorrect
@@ -24,17 +25,18 @@ def run_tests(tests_module):
     # TODO: some tests might randomly fail do to weird z3 stuff, make sure to elegantly capture that
     test_names = filter(lambda attr_name: attr_name.startswith('test_'), dir(tests_module))
     for test_name in test_names:
+        start = datetime.now()
         test: Benchmark = getattr(tests_module, test_name)()
         print(f"***running test {test_name} in {tests_module.__name__}***")
         run_test(test)
+        print(f"Time:{datetime.now() - start}")
 
 
 def _test():
     # from tests.int_seq_tests import test_0, test_1, test_2, test_3
     # run_test(test_2())
     #
-    from tests.str_tests import test_0, test_1, test_2, test_3, test_4, test_5
-    run_test(test_5())
+    run_tests(int_tests)
 
 
 if __name__ == '__main__':
