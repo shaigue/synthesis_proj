@@ -7,6 +7,7 @@ import inspect
 import itertools
 from collections import defaultdict
 from typing import List, Callable, Any, Dict, Tuple, Type
+from datetime import datetime
 
 from z3 import Int, String, IntVal, StringVal, Array, IntSort, Z3Exception
 
@@ -16,8 +17,11 @@ from src.int_seq_utils import IntSeq
 def bottom_up_enumeration_with_observational_equivalence(examples: List[Dict[str, Any]], functions: List[Callable],
                                                          constants: List[Any]):
     typed_value_vector_to_expr = _init_value_vector_to_expr(examples, constants)
+    depth = 0
 
     while True:
+        if depth == 3:
+            return None
         new_typed_value_vector_to_expr = defaultdict(dict)
 
         for func in functions:
@@ -48,6 +52,9 @@ def bottom_up_enumeration_with_observational_equivalence(examples: List[Dict[str
                 typed_value_vector_to_expr[t].update(new_value_vector_to_expr)
             else:
                 typed_value_vector_to_expr[t] = new_value_vector_to_expr
+
+        depth += 1
+        # print("depth: ", depth)
 
 
 def _iter_params(func: Callable, typed_value_vector_to_expr: Dict[Type, Dict[Tuple, str]]):
