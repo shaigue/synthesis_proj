@@ -29,15 +29,15 @@ def get_int_functions_and_constants():
 
 def get_string_functions_and_constants():
     int_funcs, int_consts = get_int_functions_and_constants()
-    functions = int_funcs + _get_module_functions(strings)
-    constants = int_consts + strings.get_constants()
+    functions = _get_module_functions(strings) + int_funcs
+    constants = strings.get_constants() + int_consts
     return functions, constants
 
 
 def get_array_functions_and_constants():
     int_funcs, int_consts = get_int_functions_and_constants()
-    functions = int_funcs + _get_module_functions(int_seq)
-    constants = int_consts + int_seq.get_constants()
+    functions = _get_module_functions(int_seq) + int_funcs
+    constants = int_seq.get_constants() + int_consts
     return functions, constants
 
 

@@ -69,6 +69,9 @@ def test_2():
             z = - temp
             sign = - sign
 
+    def input_condition(x: int, y: int, z: int):
+        return x != 0 or y != 0 or z != 0
+
     x, y, z = Ints('x y z')
     safety_property = Or(
         And(x >= 0, y >= 0, z >= 0),
@@ -78,7 +81,8 @@ def test_2():
         program,
         safety_property,
         is_correct=True,
-        is_expressible=True
+        is_expressible=True,
+        input_condition=input_condition
     )
 
 
@@ -90,17 +94,22 @@ def test_3():
             yield locals()
             i += 1
 
+    def input_condition(x: int, y: int):
+        return x != y
+
     x, y, i, m = Ints('x y i m')
     safety_property = Or(i <= 2 * x, i <= 2 * y)
     return Benchmark(
         program,
         safety_property,
         is_correct=True,
-        is_expressible=True
+        is_expressible=True,
+        input_condition=input_condition
     )
 
 
 def test_4():
+    # TODO: it is expressible, try to find one that is not expressible
     def program(x: int, y: int):
         # calculates v = x * y
         v = 0
@@ -111,7 +120,7 @@ def test_4():
             v += x
 
     def input_condition(x: int, y: int):
-        return x >= 0 and y >= 0
+        return x > 0 and y > 0
 
     x, y, v = Ints('x y v')
     safety_property = v <= x * y
@@ -138,6 +147,9 @@ def test_5():
                 c += 1  # BUG!!!
             i += 1
 
+    def input_condition(x: int, y: int) -> bool:
+        return x != y
+
     x, y, c = Ints('x y c')
     safety_property = Or(
         # if x and y are different then there is at least 1 odd number between them, but it cannot be that all are odd
@@ -149,6 +161,7 @@ def test_5():
         program,
         safety_property,
         is_correct=False,
-        is_expressible=False
+        is_expressible=False,
+        input_condition=input_condition
     )
 

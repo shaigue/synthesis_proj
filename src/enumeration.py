@@ -5,36 +5,28 @@ Height 0 contains the constants and the variables, and functions are applied to 
 """
 import inspect
 import itertools
+import logging
 from collections import defaultdict
-from typing import List, Callable, Any, Dict, Tuple, Type
-from datetime import datetime
+from typing import List, Callable, Any, Dict, Tuple, Type, Set
 
-from z3 import Int, String, IntVal, StringVal, Array, IntSort, Z3Exception
+from z3 import Int, String, IntVal, StringVal, Z3Exception
 
-from src.int_seq_utils import IntSeq
+from src.utils.int_seq_utils import IntSeq
+# from src.library.int_seq import int_seq_select
 
 
 def bottom_up_enumeration_with_observational_equivalence(examples: List[Dict[str, Any]], functions: List[Callable],
-                                                         constants: List[Any]):
-    typed_value_vector_to_expr = _init_value_vector_to_expr(examples, constants)
-    depth = 0
+                                                         constants: List[Any], max_depth: int, ignore_vars: Set[str]):
+    typed_value_vector_to_expr = _init_value_vector_to_expr(examples, constants, ignore_vars)
 
-    while True:
-        if depth == 3:
-            return None
+    for depth in range(max_depth):
         new_typed_value_vector_to_expr = defaultdict(dict)
 
         for func in functions:
             for value_vector_list, expr_list in _iter_params(func, typed_value_vector_to_expr):
-                # TODO: Handle IndexError! Can one member of the tuple be None?
-                try:
-                    value_vector = tuple(func(*params) for params in zip(*value_vector_list))
-                except IndexError:
-                    continue
-                except Z3Exception as e:
-                    print(e)
+                value_vector = tuple(func(*params) for params in zip(*value_vector_list))
 
-                t = type(value_vector[0])
+                t = _get_func_ret_type(func)
 
                 if value_vector not in typed_value_vector_to_expr[t] and \
                         value_vector not in new_typed_value_vector_to_expr[t]:
@@ -42,7 +34,7 @@ def bottom_up_enumeration_with_observational_equivalence(examples: List[Dict[str
                     if t == list:
                         value_vector = tuple(tuple(val) for val in value_vector)
                     new_typed_value_vector_to_expr[t][value_vector] = expr
-                    yield value_vector, expr
+                    yield value_vector, expr, t
 
         if len(new_typed_value_vector_to_expr) == 0:
             return
@@ -53,8 +45,10 @@ def bottom_up_enumeration_with_observational_equivalence(examples: List[Dict[str
             else:
                 typed_value_vector_to_expr[t] = new_value_vector_to_expr
 
-        depth += 1
-        # print("depth: ", depth)
+
+def _get_func_ret_type(func: Callable) -> Type:
+    func_sig = inspect.signature(func)
+    return func_sig.return_annotation
 
 
 def _iter_params(func: Callable, typed_value_vector_to_expr: Dict[Type, Dict[Tuple, str]]):
@@ -96,7 +90,7 @@ def var_to_z3(name: str, t: Type):
     raise NotImplementedError(f"type {t} is not supported")
 
 
-def _init_value_vector_to_expr(examples: List[Dict[str, Any]], constants: List):
+def _init_value_vector_to_expr(examples: List[Dict[str, Any]], constants: List, ignore_vars: Set[str]):
     typed_value_vector_to_expr = defaultdict(dict)
 
     for constant in constants:
@@ -109,6 +103,8 @@ def _init_value_vector_to_expr(examples: List[Dict[str, Any]], constants: List):
     for example in examples:
         variables.update(example.keys())
 
+    variables.difference_update(ignore_vars)
+
     for variable in variables:
         value_vector = tuple(example[variable] for example in examples)
         t = type(value_vector[0])
@@ -118,21 +114,3 @@ def _init_value_vector_to_expr(examples: List[Dict[str, Any]], constants: List):
             typed_value_vector_to_expr[t][value_vector] = var_to_z3(variable, t)
 
     return typed_value_vector_to_expr
-
-
-def main():
-    from src.library import get_int_functions_and_constants
-    functions, constants = get_int_functions_and_constants()
-    examples = [{'x': 0, 'y': 0}, {'x': 1, 'y': -1}]
-
-    for i, (value_vector, expr) in enumerate(bottom_up_enumeration_with_observational_equivalence(examples, functions,
-                                                                                                  constants)):
-        print(i)
-        print(expr)
-        print(value_vector)
-        if i == 100:
-            break
-
-
-if __name__ == '__main__':
-    main()

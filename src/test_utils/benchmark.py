@@ -2,7 +2,7 @@
 Each test should instantiate this class
 """
 from copy import deepcopy
-from typing import Callable, List, Dict, Any, Iterator
+from typing import Callable, List, Dict, Any, Iterator, Set
 
 from z3 import BoolRef
 
@@ -11,7 +11,8 @@ from src.test_utils.input_generation import generate_inputs_for_program
 
 class Benchmark:
     def __init__(self, program: Callable[..., Iterator[Dict[str, Any]]], safety_property: BoolRef,
-                 is_correct: bool, is_expressible: bool, input_condition: Callable[..., bool] = None):
+                 is_correct: bool, is_expressible: bool, input_condition: Callable[..., bool] = None,
+                 ignore_vars: Set[str] = None):
         assert not is_expressible or is_correct, f"If expressible, must be correct, got is_correct={is_correct}," \
                                                  f" is_expressible={is_expressible}"
         self.program = program
@@ -19,6 +20,7 @@ class Benchmark:
         self.is_correct = is_correct
         self.is_expressible = is_expressible
         self.input_condition = input_condition
+        self.ignore_vars = set() if ignore_vars is None else ignore_vars
 
     def generate_positive_states(self, n_inputs: int) -> List[Dict[str, Any]]:
         positive_states = []

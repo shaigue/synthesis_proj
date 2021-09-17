@@ -15,7 +15,7 @@ def test_0():
             s = s + "a"
 
     def input_condition(x: int):
-        return x >= 0
+        return x > 0
 
     s = String('s')
     x = Int('x')
@@ -58,6 +58,7 @@ def test_1():
 
 
 def test_2():
+    # TODO: this sometimes gets stuck when synthesizing. try to figure out why? maybe limit some of the variables
     def program(s: str, s1: str, s2: str, t: int):
         i = 0
         j = 0
@@ -137,6 +138,7 @@ def test_4():
 
 
 def test_5():
+    # TODO: this also might not terminate
     def program(s: str):
         i = random.randrange(len(s))
         s1 = s[:i]
@@ -167,6 +169,6 @@ def test_5():
         program,
         safety_property,
         is_correct=True,
-        is_expressible=True,
+        is_expressible=False,
         input_condition=input_condition
     )

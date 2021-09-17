@@ -1,12 +1,13 @@
-from typing import Callable, List, Dict, Any, Type, Union, Tuple, Optional
+import datetime
+import logging
+from time import time
+from typing import Callable, List, Dict, Any, Type, Tuple, Optional, Set
 import z3
 
-from z3 import And, BoolRef, Solver, Not, sat, Implies, Int, FuncInterp, ModelRef, unsat, unknown, Lambda, If, Length
+from z3 import And, BoolRef, Solver, Not, Implies, FuncInterp, ModelRef, unsat, unknown, Length
 
 import config
-from src.int_seq_utils import IntSeq
 from src.enumeration import bottom_up_enumeration_with_observational_equivalence, var_to_z3
-from config import ARRAY_LEN
 z3.set_param('model.compact', False)
 
 
@@ -15,32 +16,42 @@ z3.set_param('model.compact', False)
 # TODO: give timeout parameters in case the synthesizer does not find any solution
 # TODO: maybe for every different set of input (strings, integers, arrays) assign a function, constants
 def find_satisfying_expr(positive_examples: List[Dict[str, Any]], negative_examples: List[Dict[str, Any]],
-                         functions: List[Callable], constants: List):
+                         functions: List[Callable], constants: List, ignore_vars: Set[str]):
     examples = positive_examples + negative_examples
     n_positive = len(positive_examples)
     n_negative = len(negative_examples)
 
+    def is_true_on_all_positive_examples(value_vector: Tuple[bool]) -> bool:
+        return all(value_vector[i] for i in range(n_positive))
+
     expr_negative_cover_pairs = []
     negative_examples_to_cover = set(range(n_negative))
 
-    for value_vector, expr in bottom_up_enumeration_with_observational_equivalence(examples, functions, constants):
-        if isinstance(value_vector[0], bool) and all(value_vector[i] for i in range(n_positive)):
-            # print("*", expr, "*")
-            negative_cover = {i for i in range(n_negative) if not value_vector[n_positive + i]}
-            other_negative_covers = (negative_cover0 for _, negative_cover0 in expr_negative_cover_pairs)
+    for value_vector, expr, t in bottom_up_enumeration_with_observational_equivalence(examples, functions, constants,
+                                                                                      config.MAX_DEPTH, ignore_vars):
+        if t != bool:
+            continue
+        if not is_true_on_all_positive_examples(value_vector):
+            continue
 
-            if any(negative_cover.issubset(other_negative_cover) for other_negative_cover in other_negative_covers):
-                continue
+        negative_cover = {i for i in range(n_negative) if value_vector[n_positive + i] is False}
+        if n_negative >= 2 and len(negative_cover) < 2:
+            continue
 
-            expr_negative_cover_pairs = list(filter(lambda x: not x[1].issubset(negative_cover),
-                                                    expr_negative_cover_pairs))
-            expr_negative_cover_pairs.append((expr, negative_cover))
-            negative_examples_to_cover.difference_update(negative_cover)
+        other_negative_covers = (negative_cover0 for _, negative_cover0 in expr_negative_cover_pairs)
 
-            if len(negative_examples_to_cover) == 0:
-                if len(expr_negative_cover_pairs) > 1:
-                    return And([expr for expr, _ in expr_negative_cover_pairs])
-                return expr
+        if any(negative_cover.issubset(other_negative_cover) for other_negative_cover in other_negative_covers):
+            continue
+
+        expr_negative_cover_pairs = list(filter(lambda x: not x[1].issubset(negative_cover),
+                                                expr_negative_cover_pairs))
+        expr_negative_cover_pairs.append((expr, negative_cover))
+        negative_examples_to_cover.difference_update(negative_cover)
+
+        if len(negative_examples_to_cover) == 0:
+            if len(expr_negative_cover_pairs) > 1:
+                return And([expr for expr, _ in expr_negative_cover_pairs])
+            return expr
 
 
 def z3_eq(z3_var, value) -> BoolRef:
@@ -106,8 +117,11 @@ class SynthesisResult:
 
 def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions: List[Callable], constants: List,
                               property_to_prove: BoolRef,
-                              max_counter_examples=config.MAX_COUNTER_EXAMPLES_ROUNDS) -> SynthesisResult:
+                              max_counter_examples,
+                              ignore_vars: Set[str]) -> SynthesisResult:
+    assert len(positive_examples) > 0, "there must be at least 1 positive examples."
 
+    logging.debug(f"trying to prove: {property_to_prove}")
     all_examples_good, bad_example = _check_positive_examples_satisfy_property(positive_examples, property_to_prove)
     if not all_examples_good:
         return SynthesisResult.bad_property_cons(bad_example)
@@ -115,12 +129,12 @@ def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions
     var_name_to_type = {name: type(value) for name, value in positive_examples[0].items()}
     negative_examples = []
     for counter_example_i in range(max_counter_examples):
-        assumption = find_satisfying_expr(positive_examples, negative_examples, functions, constants)
+        assumption = find_satisfying_expr(positive_examples, negative_examples, functions, constants, ignore_vars)
         if assumption is None:
             return SynthesisResult.timeout_cons()
-        # print("Assumption: ", assumption)
         counter_example = _find_counter_example(assumption, property_to_prove, var_name_to_type)
-        if counter_example.counter_example_found:
+        if counter_example.found:
+            logging.debug(f"loop invariant: {assumption} failed with counter example: {counter_example.example}")
             negative_examples.append(counter_example.example)
         else:
             return SynthesisResult.success_cons(assumption)
@@ -129,12 +143,8 @@ def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions
 
 
 def _z3_array_to_list(arr, model):
-    if isinstance(arr, FuncInterp):
-        f = _z3_to_fun(arr)
-        ret_val = [f(i) for i in range(ARRAY_LEN)]
-        return ret_val
-
-    ret_val = [arr[i] for i in range(ARRAY_LEN)]
+    arr_len = model.eval(Length(arr)).as_long()
+    ret_val = [arr[i] for i in range(arr_len)]
     ret_val = [model.eval(entry, model_completion=True) for entry in ret_val]
     ret_val = [entry.as_long() for entry in ret_val]
     return ret_val
@@ -151,7 +161,7 @@ def _has_func_interp(model: ModelRef) -> bool:
 
 class _CounterExampleResult:
     def __init__(self, counter_example_found: bool, example: Dict[str, Any] = None):
-        self.counter_example_found = counter_example_found
+        self.found = counter_example_found
         self.example = example
 
     @classmethod
@@ -231,21 +241,17 @@ def _find_counter_example(a: BoolRef, b: BoolRef, var_name_to_type: Dict[str, Ty
         elif t == str:
             counter_example[var_name] = ""
         elif t == list:
-            counter_example[var_name] = [0] * ARRAY_LEN
+            counter_example[var_name] = [0]
         else:
             assert False, f"Does not support {t}"
 
     model = s.model()
-    # TODO: quick fix, but there should be a way better handle FuncInterp
-    # if _has_func_interp(model):
-    #     raise _FuncInterpException
 
     for model_var in model:
         var_name = str(model_var)
         if var_name in var_name_to_type:
             t = var_name_to_type[var_name]
             value = model[model_var]
-
 
             if t == int:
                 s_val = value.as_string()
