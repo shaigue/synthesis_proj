@@ -1,3 +1,0 @@
-Go over array and find max value into variable m
-property: sum(l[:i]) <= m*i
-LI: all(m >= n for n in l[:i])

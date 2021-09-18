@@ -1,4 +1,4 @@
-from z3 import IntSort, SeqSort, Const
+from z3 import IntSort, SeqSort, Const, Array
 
 
 def IntSeq(name: str):

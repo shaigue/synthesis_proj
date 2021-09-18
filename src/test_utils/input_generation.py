@@ -2,16 +2,10 @@ import random
 from inspect import signature
 from typing import List, Callable, Union, Dict, Type
 
-# random.seed(42)
-# TODO: add ability when running tests to add limitations on the inputs, maybe using preconditions?
-MIN_ARR_LEN = 0
-MAX_ARR_LEN = 10
-MIN_STR_LEN = 0
-MAX_STR_LEN = 10
-MIN_STR_CHAR_ORD = ord('A')
-MAX_STR_CHAR_ORD = ord('Z')
-MIN_INT_VALUE = -100
-MAX_INT_VALUE = 100
+from config import MIN_ARR_LEN, MAX_ARR_LEN, MIN_STR_LEN, MAX_STR_LEN, MIN_STR_CHAR_ORD, MAX_STR_CHAR_ORD, \
+    MIN_INT_VALUE, MAX_INT_VALUE
+
+random.seed(42)
 
 
 def _get_random_int(min_value=MIN_INT_VALUE, max_value=MAX_INT_VALUE) -> int:

@@ -15,7 +15,7 @@ def test_0():
             s = s + "a"
 
     def input_condition(x: int):
-        return x >= 0
+        return x > 0
 
     s = String('s')
     x = Int('x')
@@ -167,6 +167,6 @@ def test_5():
         program,
         safety_property,
         is_correct=True,
-        is_expressible=True,
+        is_expressible=False,
         input_condition=input_condition
     )

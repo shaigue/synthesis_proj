@@ -17,10 +17,6 @@ def int_sub(x: int, y: int, to_z3=False) -> int:
     return x - y
 
 
-# def mul(x: int, y: int, to_z3=False) -> int:
-#     return x * y
-
-
 def int_eq(x: int, y: int, to_z3=False) -> bool:
     return x == y
 
