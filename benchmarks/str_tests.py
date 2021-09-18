@@ -58,7 +58,6 @@ def test_1():
 
 
 def test_2():
-    # TODO: this sometimes gets stuck when synthesizing. try to figure out why? maybe limit some of the variables
     def program(s: str, s1: str, s2: str, t: int):
         i = 0
         j = 0
@@ -138,7 +137,6 @@ def test_4():
 
 
 def test_5():
-    # TODO: this also might not terminate
     def program(s: str):
         i = random.randrange(len(s))
         s1 = s[:i]

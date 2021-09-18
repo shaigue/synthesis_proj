@@ -10,34 +10,16 @@ def get_constants():
 
 
 def int_add(x: int, y: int, to_z3=False) -> int:
-    if x is None or y is None:
-        return None
     return x + y
 
 
 def int_sub(x: int, y: int, to_z3=False) -> int:
-    if x is None or y is None:
-        return None
     return x - y
-
-# def int_unary_minus(x: int, to_z3=False) -> int:
-#     if x is None:
-#         return None
-#     return -x
 
 
 def int_eq(x: int, y: int, to_z3=False) -> bool:
-    if x is None or y is None:
-        return None
     return x == y
 
 
 def int_lt(x: int, y: int, to_z3=False) -> bool:
-    if x is None or y is None:
-        return None
     return x < y
-
-
-
-# def mul(x: int, y: int, to_z3=False) -> int:
-#     return x * y

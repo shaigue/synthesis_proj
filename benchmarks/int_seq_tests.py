@@ -1,6 +1,5 @@
 from typing import List
 
-# TODO: add support for arrays in varying sizes
 from z3 import Ints, ForAll, Implies, Int, Or, Length, And, Exists
 
 from src.utils.int_seq_utils import IntSeq

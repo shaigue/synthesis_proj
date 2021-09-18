@@ -71,7 +71,6 @@ def _iter_params(func: Callable, typed_value_vector_to_expr: Dict[Type, Dict[Tup
 
 
 def _const_to_z3(constant):
-    # TODO: add support for array types
     t = type(constant)
     if t == int:
         return IntVal(constant)

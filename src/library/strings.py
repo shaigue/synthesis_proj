@@ -24,11 +24,6 @@ def str_suffix_of(suffix: str, s: str, to_z3=False) -> bool:
     return s.endswith(suffix)
 
 
-#
-# def str_eq(s1: str, s2: str, to_z3=False) -> bool:
-#     return s1 == s2
-
-
 # def str_contains(s: str, substr: str, to_z3=False) -> bool:
 #     if to_z3:
 #         return Contains(s, substr)

@@ -72,6 +72,7 @@ def test_2():
     def input_condition(x: int, y: int, z: int):
         return x != 0 or y != 0 or z != 0
 
+    ignore_vars = {'temp'}
     x, y, z = Ints('x y z')
     safety_property = Or(
         And(x >= 0, y >= 0, z >= 0),
@@ -82,7 +83,8 @@ def test_2():
         safety_property,
         is_correct=True,
         is_expressible=True,
-        input_condition=input_condition
+        input_condition=input_condition,
+        ignore_vars=ignore_vars
     )
 
 
@@ -109,7 +111,6 @@ def test_3():
 
 
 def test_4():
-    # TODO: it is expressible, try to find one that is not expressible
     def program(x: int, y: int):
         # calculates v = x * y
         v = 0

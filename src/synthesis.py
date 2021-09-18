@@ -11,10 +11,6 @@ from src.enumeration import bottom_up_enumeration_with_observational_equivalence
 z3.set_param('model.compact', False)
 
 
-# TODO: add timeout based on time, and not on the number of counter examples
-# TODO: try to minimize when doing conjuction of the formulas, to avoid redundant ones
-# TODO: give timeout parameters in case the synthesizer does not find any solution
-# TODO: maybe for every different set of input (strings, integers, arrays) assign a function, constants
 def find_satisfying_expr(positive_examples: List[Dict[str, Any]], negative_examples: List[Dict[str, Any]],
                          functions: List[Callable], constants: List, ignore_vars: Set[str]):
     examples = positive_examples + negative_examples
@@ -78,7 +74,6 @@ def _check_positive_examples_satisfy_property(positive_examples: List[Dict[str, 
 
         for variable, value in example.items():
             variable_z3 = var_to_z3(variable, type(value))
-            # TODO: make sure that this works for arrays and strings
             constraint = z3_eq(variable_z3, value)
             constraints.append(constraint)
 
@@ -107,7 +102,6 @@ class SynthesisResult:
 
     @classmethod
     def bad_property_cons(cls, bad_example):
-        # TODO: return also the bad example that does not satisfy the constraint
         return cls(False, True, False, bad_example)
 
     @classmethod
@@ -118,8 +112,9 @@ class SynthesisResult:
 def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions: List[Callable], constants: List,
                               property_to_prove: BoolRef,
                               max_counter_examples,
-                              ignore_vars: Set[str]) -> SynthesisResult:
+                              ignore_vars: Set[str], timeout: int) -> SynthesisResult:
     assert len(positive_examples) > 0, "there must be at least 1 positive examples."
+    start_time = time()
 
     logging.debug(f"trying to prove: {property_to_prove}")
     all_examples_good, bad_example = _check_positive_examples_satisfy_property(positive_examples, property_to_prove)
@@ -129,6 +124,10 @@ def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions
     var_name_to_type = {name: type(value) for name, value in positive_examples[0].items()}
     negative_examples = []
     for counter_example_i in range(max_counter_examples):
+        t = time() - start_time
+        if t >= timeout:
+            return SynthesisResult.timeout_cons()
+
         assumption = find_satisfying_expr(positive_examples, negative_examples, functions, constants, ignore_vars)
         if assumption is None:
             return SynthesisResult.timeout_cons()
@@ -227,7 +226,6 @@ def _find_counter_example(a: BoolRef, b: BoolRef, var_name_to_type: Dict[str, Ty
     s.add(Not(Implies(a, b)))
     res = s.check()
 
-    # TODO: deal with unknown
     if res == unknown:
         raise RuntimeError(f"cannot deal with unknown")
 
