@@ -127,10 +127,12 @@ def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions
     for counter_example_i in range(max_counter_examples):
         t = time() - start_time
         if t >= timeout:
+            logging.info("Time limit reached")
             return SynthesisResult.timeout_cons(t)
 
         assumption = find_satisfying_expr(positive_examples, negative_examples, functions, constants, ignore_vars)
         if assumption is None:
+            logging.info("Depth limit reached / no new expressions found")
             return SynthesisResult.timeout_cons(time() - start_time)
         counter_example = _find_counter_example(assumption, property_to_prove, var_name_to_type)
         if counter_example.found:
@@ -139,6 +141,7 @@ def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions
         else:
             return SynthesisResult.success_cons(time() - start_time, assumption)
 
+    logging.info("Attempts limit reached")
     return SynthesisResult.timeout_cons(time() - start_time)
 
 

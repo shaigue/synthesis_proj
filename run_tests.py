@@ -7,8 +7,8 @@ from src.synthesis import counter_example_synthesis
 from benchmarks import int_tests, str_tests, int_seq_tests
 from datetime import datetime
 
-# logging.basicConfig(level=logging.INFO)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.DEBUG)
 
 
 def run_test(test: Benchmark, timeout: int):
