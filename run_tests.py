@@ -27,9 +27,15 @@ def run_test(test: Benchmark, timeout: int):
 
 def run_tests(tests_module, timeout=config.TEST_TIME_LIMIT_SECONDS):
     test_names = filter(lambda attr_name: attr_name.startswith('test_'), dir(tests_module))
+    test_module_name = tests_module.__name__.split('.')[-1]
+    group_result_file = config.TESTS_RESULT_DIR / f'{test_module_name}.txt'
+    columns = ["result", "runtime", "is correct", "is expressible"]
+    row_format = "{:<15}" * (len(columns) + 1)
+    with group_result_file.open("w") as f:
+        f.write(row_format.format("", *columns))
+        f.write("\n")
     for test_name in test_names:
         test: Benchmark = getattr(tests_module, test_name)()
-        test_module_name = tests_module.__name__.split('.')[-1]
         logging.info(f"running test {test_name} in {test_module_name}")
         logging.info(f"correct={test.is_correct}, expressible={test.is_expressible}")
 
@@ -38,13 +44,20 @@ def run_tests(tests_module, timeout=config.TEST_TIME_LIMIT_SECONDS):
         logging.info(f"Time:{datetime.now() - start}")
 
         result_file = config.TESTS_RESULT_DIR / f'{test_module_name}_{test_name}.txt'
-        with result_file.open('w') as f:
-            if result.timeout:
-                f.write("TIMEOUT")
-            elif result.bad_property:
-                f.write(f"BAD PROPERTY: {test.safety_property} WITH POSITIVE EXAMPLE: {result.value}")
-            else:
-                f.write(str(result.value))
+        with result_file.open('w') as f_test:
+            with group_result_file.open('a') as f_group:
+                if result.timeout:
+                    f_test.write("TIMEOUT")
+                    f_group.write(row_format.format(test_name, "timeout", round(result.runtime, 4), test.is_correct, test.is_expressible))
+                    f_group.write("\n")
+                elif result.bad_property:
+                    f_test.write(f"BAD PROPERTY: {test.safety_property} WITH POSITIVE EXAMPLE: {result.value}")
+                    f_group.write(row_format.format(test_name, "bad property", round(result.runtime, 4), test.is_correct, test.is_expressible))
+                    f_group.write("\n")
+                else:
+                    f_test.write(str(result.value))
+                    f_group.write(row_format.format(test_name, "success", round(result.runtime, 4), test.is_correct, test.is_expressible))
+                    f_group.write("\n")
 
 
 def _test():

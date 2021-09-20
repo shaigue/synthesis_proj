@@ -89,24 +89,25 @@ def _check_positive_examples_satisfy_property(positive_examples: List[Dict[str, 
 
 
 class SynthesisResult:
-    def __init__(self, success: bool, bad_property: bool, timeout: bool, value=None):
+    def __init__(self, success: bool, bad_property: bool, timeout: bool, runtime: int, value=None):
         assert value is not None or not success, "if success, result must be provided."
         self.success = success
         self.bad_property = bad_property
         self.timeout = timeout
         self.value = value
+        self.runtime = runtime
 
     @classmethod
-    def timeout_cons(cls):
-        return cls(False, False, True)
+    def timeout_cons(cls, runtime: int):
+        return cls(False, False, True, runtime)
 
     @classmethod
-    def bad_property_cons(cls, bad_example):
-        return cls(False, True, False, bad_example)
+    def bad_property_cons(cls, runtime: int, bad_example):
+        return cls(False, True, False, runtime, bad_example)
 
     @classmethod
-    def success_cons(cls, result: BoolRef):
-        return cls(True, False, False, result)
+    def success_cons(cls, runtime: int, result: BoolRef):
+        return cls(True, False, False, runtime, result)
 
 
 def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions: List[Callable], constants: List,
@@ -119,26 +120,26 @@ def counter_example_synthesis(positive_examples: List[Dict[str, Any]], functions
     logging.debug(f"trying to prove: {property_to_prove}")
     all_examples_good, bad_example = _check_positive_examples_satisfy_property(positive_examples, property_to_prove)
     if not all_examples_good:
-        return SynthesisResult.bad_property_cons(bad_example)
+        return SynthesisResult.bad_property_cons(time() - start_time, bad_example)
 
     var_name_to_type = {name: type(value) for name, value in positive_examples[0].items()}
     negative_examples = []
     for counter_example_i in range(max_counter_examples):
         t = time() - start_time
         if t >= timeout:
-            return SynthesisResult.timeout_cons()
+            return SynthesisResult.timeout_cons(t)
 
         assumption = find_satisfying_expr(positive_examples, negative_examples, functions, constants, ignore_vars)
         if assumption is None:
-            return SynthesisResult.timeout_cons()
+            return SynthesisResult.timeout_cons(time() - start_time)
         counter_example = _find_counter_example(assumption, property_to_prove, var_name_to_type)
         if counter_example.found:
             logging.debug(f"loop invariant: {assumption} failed with counter example: {counter_example.example}")
             negative_examples.append(counter_example.example)
         else:
-            return SynthesisResult.success_cons(assumption)
+            return SynthesisResult.success_cons(time() - start_time, assumption)
 
-    return SynthesisResult.timeout_cons()
+    return SynthesisResult.timeout_cons(time() - start_time)
 
 
 def _z3_array_to_list(arr, model):
